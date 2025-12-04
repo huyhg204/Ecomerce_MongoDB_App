@@ -1,0 +1,315 @@
+/* ===== ORDER DETAIL PAGE (RED THEME #d90019) ===== */
+
+.order-detail-main {
+  max-width: 780px;
+  margin: 0 auto 50px auto;
+  padding: 32px 10px 44px 10px;
+  font-family: "Quicksand", Arial, sans-serif;
+  background: #fff;
+}
+
+/* ===== BREADCRUMB ===== */
+.breadcrumb {
+  font-size: 18px;
+  color: #888;
+  margin-bottom: 18px;
+  margin-top: 0;
+}
+
+.breadcrumb a {
+  color: #d90019;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.breadcrumb-current {
+  color: #767676;
+  font-weight: 500;
+}
+
+/* ===== HEADER ===== */
+.order-detail-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #d90019;
+  margin-bottom: 10px;
+}
+
+.order-detail-header span {
+  color: #232323;
+}
+
+/* ===== STATUS ===== */
+.order-detail-status {
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  padding: 4px 17px;
+}
+
+.order-status-pending {
+  background: #fff6e0;
+  color: #d99100;
+}
+
+.order-status-pending i {
+  color: #d99100;
+}
+
+.order-status-preparing {
+  background: #eaf1ff;
+  color: #0053d9;
+}
+
+.order-status-preparing i {
+  color: #0053d9;
+}
+
+.order-status-shipping {
+  background: #fff7e8;
+  color: #d97900;
+}
+
+.order-status-shipping i {
+  color: #d97900;
+}
+
+.order-status-done {
+  background: #ecfff1;
+  color: #28b06f;
+}
+
+.order-status-done i {
+  color: #28b06f;
+}
+
+.order-status-cancel {
+  background: #ffeaea;
+  color: #d90019;
+}
+
+.order-status-cancel i {
+  color: #d90019;
+}
+
+/* ===== META ===== */
+.order-detail-meta {
+  color: #555;
+  font-size: 1.04rem;
+  margin-bottom: 22px;
+}
+
+.order-detail-meta>div {
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.order-detail-meta i {
+  color: #d90019;
+}
+
+/* ===== PRODUCT LIST ===== */
+.order-detail-products h2,
+.order-detail-summary h2 {
+  color: #232323;
+  font-size: 1.12rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  margin-top: 24px;
+}
+
+.order-detail-product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin-bottom: 8px;
+}
+
+.order-detail-product-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid #ffe1e1;
+  padding-bottom: 11px;
+  padding-top: 2px;
+}
+
+.order-detail-product-item:last-child {
+  border-bottom: none;
+}
+
+.order-detail-product-item img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ffd9d9;
+  background: #fff;
+}
+
+.order-detail-product-info {
+  flex: 1 1 0;
+}
+
+.order-detail-product-name {
+  font-weight: 600;
+  color: #232323;
+  font-size: 1.06rem;
+  margin-bottom: 2px;
+}
+
+.order-detail-product-opt {
+  color: #bcbcbc;
+  font-size: 0.97rem;
+  margin-bottom: 3px;
+}
+
+.order-detail-product-qty {
+  color: #222;
+  font-size: 0.99rem;
+}
+
+.order-detail-product-price {
+  font-weight: 700;
+  color: #d90019;
+  font-size: 1.03rem;
+  min-width: 85px;
+  text-align: right;
+}
+
+/* ===== SUMMARY ===== */
+.order-detail-summary {
+  background: #fff5f6;
+  border-radius: 11px;
+  padding: 18px 15px;
+  margin-bottom: 22px;
+  margin-top: 20px;
+}
+
+.order-detail-sumrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.07rem;
+  margin-bottom: 8px;
+  color: #444;
+}
+
+.order-detail-sumtotal {
+  font-weight: 700;
+  color: #d90019;
+  font-size: 1.14rem;
+  margin-top: 7px;
+}
+
+/* ===== NOTE ===== */
+.order-detail-note {
+  background: #fff1f2;
+  color: #d90019;
+  border-radius: 7px;
+  padding: 9px 14px;
+  margin-top: 12px;
+  font-size: 1.05rem;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.order-detail-actions {
+  text-align: right;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ffe2e2;
+}
+
+.order-cancel-btn,
+.order-receive-btn {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1.02rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.3px solid;
+}
+
+/* Nút Hủy đơn */
+.order-cancel-btn {
+  background: #fff;
+  border-color: #ff4b4b;
+  color: #b80000;
+}
+
+.order-cancel-btn:hover {
+  background: #ff4b4b;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(217, 0, 25, 0.25);
+}
+
+.order-cancel-btn:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+/* Nút Đã nhận hàng - màu xanh lá */
+.order-receive-btn {
+  background: #26a75d;
+  border-color: #26a75d;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(38, 167, 93, 0.2);
+}
+
+.order-receive-btn:hover {
+  background: #1f8a4d;
+  border-color: #1f8a4d;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(38, 167, 93, 0.3);
+  transform: translateY(-1px);
+}
+
+.order-receive-btn:disabled {
+  background: #ccc;
+  border-color: #ccc;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 700px) {
+  .order-detail-main {
+    padding: 4vw 1vw;
+  }
+
+  .order-detail-product-item img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .order-detail-actions {
+    text-align: center;
+  }
+
+  .order-cancel-btn,
+  .order-receive-btn {
+    padding: 8px 16px;
+    font-size: 0.95rem;
+    margin: 4px;
+    width: 100%;
+    max-width: 200px;
+  }
+}

@@ -1,0 +1,290 @@
+body,
+html {
+  height: 100%;
+  margin: 0;
+  font-family: "Quicksand", Arial, sans-serif;
+}
+
+/* Background login */
+.auth-bg {
+  min-height: 100vh;
+  width: 100vw;
+  background: linear-gradient(rgba(34, 40, 49, 0.65), rgba(34, 40, 49, 0.65)),
+    url("../css/nen.png") no-repeat center center/cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Modal login */
+.auth-modal {
+  display: flex;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 50px rgba(34, 40, 49, 0.15);
+  min-width: 690px;
+  max-width: 98vw;
+  min-height: 430px;
+}
+
+/* Bên trái: Welcome */
+.auth-left {
+  background: #d90019;
+  color: #fff;
+  width: 300px;
+  min-width: 230px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.auth-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.auth-welcome {
+  text-align: center;
+  padding: 28px 18px 20px 18px;
+}
+
+.auth-welcome h2 {
+  font-size: 22px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.auth-welcome p {
+  font-size: 15px;
+  color: #ffd6dc;
+  margin: 0;
+}
+
+/* Bên phải: Form login */
+.auth-right {
+  flex: 1;
+  padding: 36px 38px 32px 38px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.auth-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  letter-spacing: 2px;
+  color: #d90019;
+}
+
+.auth-form .form-group {
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1.3px solid #d90019;
+  border-radius: 7px;
+  background: #f9f9f9;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.18s;
+}
+
+.auth-form input:focus {
+  border-color: #d90019;
+}
+
+.password-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #d90019;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.forgot-link {
+  text-align: right;
+  margin-bottom: 9px;
+}
+
+.forgot-link a {
+  color: #d90019;
+  font-size: 15px;
+  text-decoration: none;
+  transition: color 0.18s;
+}
+
+.forgot-link a:hover {
+  color: #a10016;
+}
+
+.auth-btn {
+  width: 100%;
+  background: #d90019;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 12px 0;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 7px;
+  transition: background 0.18s;
+}
+
+.auth-btn:hover {
+  background: #a10016;
+}
+
+.or-divider {
+  margin: 17px 0 13px 0;
+  text-align: center;
+  color: #888;
+  position: relative;
+  font-size: 15px;
+}
+
+.or-divider span {
+  background: #fff;
+  padding: 0 13px;
+  position: relative;
+  z-index: 1;
+}
+
+.or-divider:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1.5px;
+  background: #d90019;
+  opacity: 0.2;
+  z-index: 0;
+}
+
+.social-login {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 5px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: 15.5px;
+  font-weight: 600;
+  padding: 10px 0;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.17s, color 0.17s;
+}
+
+.social-btn.facebook {
+  background: #3b5998;
+  color: #fff;
+}
+
+.social-btn.facebook:hover {
+  background: #283e68;
+}
+
+.social-btn.google {
+  background: #fff;
+  color: #d90019;
+  border: 1.2px solid #d90019;
+}
+
+.social-btn.google:hover {
+  background: #d90019;
+  color: #fff;
+}
+
+.social-btn i {
+  font-size: 18px;
+}
+
+.auth-link {
+  margin-top: 13px;
+  text-align: center;
+  font-size: 15px;
+}
+
+.auth-link a {
+  color: #d90019;
+  text-decoration: none;
+  font-weight: 600;
+  margin-left: 3px;
+  transition: color 0.18s;
+}
+
+.auth-link a:hover {
+  color: #a10016;
+}
+
+/* Error message */
+.error-message {
+  display: block;
+  color: #d90019;
+  font-size: 13px;
+  margin-top: 5px;
+  margin-bottom: 0;
+  padding-left: 2px;
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-group .error-message {
+  margin-top: 4px;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .auth-modal {
+    min-width: 320px;
+    flex-direction: column;
+    max-width: 99vw;
+  }
+
+  .auth-left,
+  .auth-right {
+    width: 100%;
+    min-width: unset;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  .auth-img {
+    height: 100px;
+  }
+}

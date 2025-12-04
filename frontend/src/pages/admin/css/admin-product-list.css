@@ -1,0 +1,288 @@
+/* ======================================================
+   PRODUCT LIST PAGE LAYOUT
+====================================================== */
+.product-list-content {
+  padding: 20px;
+  font-family: "Inter", Arial, sans-serif;
+}
+
+.product-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.product-list-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.add-btn {
+  background: #6366f1;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: 0.25s;
+}
+
+.add-btn:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+/* ======================================================
+   TABS
+====================================================== */
+.product-list-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #4b5563;
+  font-weight: 500;
+  transition: 0.25s;
+}
+
+.tab.active,
+.tab:hover {
+  background: #6366f1;
+  color: #fff;
+}
+
+/* ======================================================
+   FILTER BAR
+====================================================== */
+.product-list-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 10px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.search-bar input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+}
+
+.product-list-filters select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.filter-btn,
+.save-filter {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: 0.25s;
+}
+
+.filter-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.filter-btn:hover {
+  background: #e5e7eb;
+}
+
+.save-filter {
+  background: #10b981;
+  color: #fff;
+}
+
+.save-filter:hover {
+  background: #0d986e;
+}
+
+/* ======================================================
+   TABLE – PREMIUM VERSION
+====================================================== */
+.admin-table-wrap {
+  background: white;
+  border-radius: 14px;
+  padding: 0;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.admin-table thead {
+  background: #f9fafb;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #374151;
+  text-align: left;
+  border-bottom: 1px solid #f1f1f1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.admin-table th {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.admin-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* Image */
+.admin-table img {
+  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+/* Column sizes */
+.admin-table th:nth-child(1),
+.admin-table td:nth-child(1) {
+  width: 40px;
+}
+
+.admin-table th:nth-child(2),
+.admin-table td:nth-child(2) {
+  width: 55px;
+}
+
+.admin-table th:nth-child(8),
+.admin-table td:nth-child(8) {
+  width: 130px;
+}
+
+/* ======================================================
+   ACTION BUTTONS – Modern
+====================================================== */
+.edit-btn,
+.delete-btn {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 6px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.edit-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+/* ======================================================
+   PAGINATION – clean & modern
+====================================================== */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 18px 0;
+  gap: 10px;
+}
+
+.pagination button {
+  background: white;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s;
+  font-size: 14px;
+}
+
+.pagination button:hover {
+  background: #f3f4f6;
+}
+
+.pagination span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* ======================================================
+   PRODUCT NAME – Highlight Red
+====================================================== */
+.product-name {
+  color: #e11d48;
+  /* đỏ đẹp */
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: 0.25s ease;
+}
+
+.product-name:hover {
+  color: #be123c;
+  /* đỏ đậm khi hover */
+  text-decoration: underline;
+  transform: translateX(2px);
+  /* hiệu ứng premium */
+}

@@ -1,0 +1,153 @@
+.forgot-main {
+  max-width: 440px;
+  margin: 36px auto 60px auto;
+  padding: 32px 10px 44px 10px;
+  font-family: "Quicksand", Arial, sans-serif;
+  background: #fff;
+}
+
+/* ===== BREADCRUMB ===== */
+.breadcrumb {
+  font-size: 18px;
+  color: #888;
+  margin-bottom: 22px;
+}
+
+.breadcrumb a {
+  color: #d90019;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+  color: #b10014;
+}
+
+.breadcrumb-current {
+  color: #767676;
+  font-weight: 500;
+}
+
+/* ===== WRAPPER ===== */
+.forgot-wrap {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 14px rgba(217, 0, 25, 0.09);
+  border: 1.2px solid #ffd5d5;
+  padding: 38px 34px 20px 34px;
+  text-align: center;
+}
+
+.forgot-wrap h1 {
+  color: #d90019;
+  font-size: 2rem;
+  margin-bottom: 19px;
+  font-weight: 700;
+}
+
+/* ===== FORM ===== */
+.forgot-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.forgot-form input {
+  border: 1.5px solid #e2bdbd;
+  border-radius: 8px;
+  padding: 12px 13px;
+  font-size: 1rem;
+  background: #fff;
+  outline: none;
+  transition: border 0.18s, box-shadow 0.18s;
+  font-family: inherit;
+  text-align: left;
+}
+
+.forgot-form input:focus {
+  border-color: #d90019;
+  box-shadow: 0 0 0 2px rgba(217, 0, 25, 0.12);
+}
+
+/* ===== BUTTON ===== */
+.forgot-btn {
+  background: #d90019;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 0;
+  font-size: 1.07rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 3px;
+  transition: background 0.18s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.forgot-btn i {
+  font-size: 1.13rem;
+}
+
+.forgot-btn:hover {
+  background: #b10014;
+  transform: scale(1.02);
+}
+
+/* ===== SUCCESS ===== */
+.forgot-success {
+  color: #49b875;
+  font-size: 1.11rem;
+  font-weight: 700;
+  margin: 12px 0 18px 0;
+}
+
+.forgot-success i {
+  color: #49b875;
+  font-size: 1.35rem;
+  margin-right: 7px;
+}
+
+/* ===== LINKS & ACTIONS ===== */
+.forgot-back,
+.forgot-otp-actions {
+  margin-top: 10px;
+}
+
+.forgot-link {
+  color: #d90019;
+  font-weight: 600;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  transition: color 0.18s;
+}
+
+.forgot-link:hover {
+  color: #b10014;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .forgot-main {
+    padding: 6vw 1vw;
+  }
+
+  .forgot-wrap {
+    padding: 7vw 3vw;
+  }
+
+  .forgot-wrap h1 {
+    font-size: 1.7rem;
+  }
+}
