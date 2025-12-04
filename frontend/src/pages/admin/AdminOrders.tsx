@@ -388,7 +388,8 @@ const AdminOrders: React.FC = () => {
             <div className="admin-orders__details-section">
               <h4>Thanh toán</h4>
               {(() => {
-                const calculatedSubTotal = selectedOrder.items.reduce(
+                // Tính toán lại từ items nếu totals không có (đơn hàng cũ)
+                const calculatedOriginalTotal = selectedOrder.items.reduce(
                   (sum, item) => sum + (item.oldPrice || item.price) * item.quantity,
                   0
                 );
@@ -396,9 +397,11 @@ const AdminOrders: React.FC = () => {
                   (sum, item) => sum + item.price * item.quantity,
                   0
                 );
-                const calculatedSavings = calculatedSubTotal - calculatedTotal;
-                const subTotal = selectedOrder.totals.total ? selectedOrder.totals.subTotal : calculatedSubTotal;
-                const total = selectedOrder.totals.total || calculatedTotal;
+                const calculatedSavings = calculatedOriginalTotal - calculatedTotal;
+                
+                // Sử dụng giá trị từ totals nếu có, nếu không thì tính lại
+                const subTotal = selectedOrder.totals.subTotal !== undefined ? selectedOrder.totals.subTotal : calculatedTotal;
+                const total = selectedOrder.totals.total !== undefined ? selectedOrder.totals.total : calculatedTotal;
                 const savings = selectedOrder.totals.savings !== undefined ? selectedOrder.totals.savings : calculatedSavings;
                 
                 return (
@@ -413,9 +416,9 @@ const AdminOrders: React.FC = () => {
                         <span style={{ fontWeight: 600 }}>-{formatCurrency(savings)}</span>
                       </div>
                     )}
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Phí vận chuyển:</span>
-                      <span>{formatCurrency(selectedOrder.totals.shippingFee)}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600, paddingTop: "8px", borderTop: "1px solid #e0e0e0" }}>
+                      <span>Thành tiền:</span>
+                      <span style={{ color: "#d90019", fontWeight: 600 }}>{formatCurrency(total)}</span>
                     </div>
                     {selectedOrder.totals.discount > 0 && (
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -423,6 +426,10 @@ const AdminOrders: React.FC = () => {
                         <span>-{formatCurrency(selectedOrder.totals.discount)}</span>
                       </div>
                     )}
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>Phí vận chuyển:</span>
+                      <span>{formatCurrency(selectedOrder.totals.shippingFee)}</span>
+                    </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: "16px", paddingTop: "8px", borderTop: "1px solid #e0e0e0" }}>
                       <span>Tổng cộng:</span>
                       <span style={{ color: "#d90019" }}>{formatCurrency(selectedOrder.totals.grandTotal)}</span>

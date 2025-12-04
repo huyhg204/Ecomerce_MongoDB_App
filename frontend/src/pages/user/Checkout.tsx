@@ -106,35 +106,38 @@ const Checkout: React.FC = () => {
 
   const totals = useMemo(() => {
     if (!cart?.items?.length) {
-      return { subTotal: 0, grandTotal: 0, savings: 0 };
+      return { subTotal: 0, total: 0, grandTotal: 0, savings: 0 };
     }
 
-    // Tạm tính (tính theo giá gốc)
-    const subTotal = cart.items.reduce((sum: number, item: CartItem) => {
+    // Tổng tiền gốc (để tính tiết kiệm)
+    const originalTotal = cart.items.reduce((sum: number, item: CartItem) => {
       const price = toNumber(item.productId.price);
       const oldPrice = toNumber(item.productId.oldPrice);
       const hasSale = oldPrice > price && oldPrice > 0;
       return sum + (hasSale ? oldPrice : price) * item.quantity;
     }, 0);
 
-    // Tổng tiền (tính theo giá giảm)
-    const total = cart.items.reduce(
+    // Tạm tính (tính theo giá giảm - giá sau khi sale)
+    const subTotal = cart.items.reduce(
       (sum: number, item: CartItem) =>
         sum + toNumber(item.productId.price) * item.quantity,
       0
     );
 
-    // Tiết kiệm
-    const savings = subTotal - total;
+    // Tiết kiệm = tổng tiền gốc - tổng tiền giảm
+    const savings = originalTotal - subTotal;
+
+    // Thành tiền = tổng tiền giá giảm (trước khi áp voucher)
+    const total = subTotal;
 
     const couponDiscount = appliedCoupon?.discount || 0;
 
     return {
-      subTotal, // Tạm tính (giá gốc)
-      total, // Tổng tiền (giá giảm)
+      subTotal, // Tạm tính (giá giảm)
+      total, // Thành tiền (giá giảm - trước voucher)
       savings, // Tiết kiệm
       couponDiscount, // Giảm từ mã giảm giá
-      grandTotal: Math.max(total + shippingFee - couponDiscount, 0), // Tổng cộng (giá giảm + phí ship - mã giảm giá)
+      grandTotal: Math.max(total + shippingFee - couponDiscount, 0), // Tổng cộng (thành tiền + phí ship - mã giảm giá)
     };
   }, [cart, shippingFee, appliedCoupon]);
 
@@ -469,6 +472,12 @@ const Checkout: React.FC = () => {
                     </span>
                   </div>
                 )}
+                <div className="checkout-sum-row" style={{ fontWeight: 600, paddingTop: "8px", borderTop: "1px solid #e0e0e0" }}>
+                  <span>Thành tiền</span>
+                  <span style={{ color: "#d90019", fontWeight: 600 }}>
+                    {totals.total.toLocaleString()}₫
+                  </span>
+                </div>
                 {totals.couponDiscount && totals.couponDiscount > 0 && (
                   <div className="checkout-sum-row" style={{ color: "#dc2626" }}>
                     <span>Mã giảm giá</span>
@@ -489,13 +498,39 @@ const Checkout: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="checkout-btn-order"
-                disabled={placing || !cartCount}
-              >
-                {placing ? "Đang xử lý..." : "Đặt hàng ngay"}
-              </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <button
+                  type="submit"
+                  className="checkout-btn-order"
+                  disabled={placing || !cartCount}
+                >
+                  {placing ? "Đang xử lý..." : "Đặt hàng ngay"}
+                </button>
+                <Link
+                  to="/cart"
+                  style={{
+                    display: "block",
+                    textAlign: "center",
+                    padding: "12px",
+                    background: "#f5f5f5",
+                    color: "#333",
+                    textDecoration: "none",
+                    borderRadius: "8px",
+                    border: "1px solid #ddd",
+                    fontWeight: 500,
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#e8e8e8";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f5f5f5";
+                  }}
+                >
+                  <i className="fa fa-arrow-left" style={{ marginRight: "8px" }}></i>
+                  Quay lại giỏ hàng
+                </Link>
+              </div>
 
               <div className="checkout-safe-note">
                 <i className="fa fa-shield-heart"></i>

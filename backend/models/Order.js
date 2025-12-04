@@ -44,7 +44,9 @@ const shippingInfoSchema = new mongoose.Schema(
 
 const totalsSchema = new mongoose.Schema(
   {
-    subTotal: { type: Number, required: true },
+    subTotal: { type: Number, required: true }, // Tạm tính (giá giảm)
+    total: { type: Number, required: true }, // Thành tiền (giá giảm - trước voucher)
+    savings: { type: Number, default: 0 }, // Tiết kiệm
     shippingFee: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
     grandTotal: { type: Number, required: true },

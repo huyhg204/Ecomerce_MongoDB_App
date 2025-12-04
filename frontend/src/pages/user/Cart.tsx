@@ -158,20 +158,20 @@ const Cart: React.FC = () => {
         fetchCart();
     }, [authLoading, fetchCart]);
 
-    // Tạm tính (tính theo giá gốc)
-    const subTotal = useMemo(() => {
+    // Tổng tiền gốc (để tính tiết kiệm)
+    const originalTotal = useMemo(() => {
         if (!cart?.items?.length) return 0;
         return cart.items.reduce((sum: number, item: CartItem) => {
             const price = toNumber(item.productId.price);
             const oldPrice = toNumber(item.productId.oldPrice);
             const hasSale = oldPrice > price && oldPrice > 0;
-            // Tạm tính = giá gốc * số lượng
+            // Tổng tiền gốc = giá gốc * số lượng
             return sum + (hasSale ? oldPrice : price) * item.quantity;
         }, 0);
     }, [cart]);
 
-    // Tổng tiền (tính theo giá giảm)
-    const total = useMemo(() => {
+    // Tạm tính (tính theo giá giảm - giá sau khi sale)
+    const subTotal = useMemo(() => {
         if (!cart?.items?.length) return 0;
         return cart.items.reduce(
             (sum: number, item: CartItem) =>
@@ -180,8 +180,8 @@ const Cart: React.FC = () => {
         );
     }, [cart]);
 
-    // Tiết kiệm
-    const savings = subTotal - total;
+    // Tiết kiệm = tổng tiền gốc - tổng tiền giảm
+    const savings = originalTotal - subTotal;
 
     if (loading || authLoading) {
         return <h2>Đang tải giỏ hàng...</h2>;
@@ -287,20 +287,9 @@ const Cart: React.FC = () => {
                                 </div>
 
                                 <div className="cart-price">
-                                    {hasSale ? (
-                                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                                            <span style={{ color: "#d90019", fontWeight: 600 }}>
-                                                {itemTotal.toLocaleString()}đ
-                                            </span>
-                                            <span style={{ color: "#999", textDecoration: "line-through", fontSize: "13px" }}>
-                                                {itemOldTotal.toLocaleString()}đ
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <span style={{ color: "#d90019", fontWeight: 600 }}>
-                                            {itemTotal.toLocaleString()}đ
-                                        </span>
-                                    )}
+                                    <span style={{ color: "#d90019", fontWeight: 600 }}>
+                                        {itemTotal.toLocaleString()}đ
+                                    </span>
                                 </div>
                             </div>
                         );
@@ -331,12 +320,6 @@ const Cart: React.FC = () => {
                             </div>
                         </div>
                     )}
-                    <div>
-                        <div className="cart-summary-label cart-summary-label-total">Tổng tiền:</div>
-                        <div className="cart-summary-value cart-summary-total">
-                            {total.toLocaleString()}đ
-                        </div>
-                    </div>
                 </div>
 
                 <button

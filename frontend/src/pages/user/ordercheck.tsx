@@ -207,9 +207,9 @@ const OrderCheck: React.FC = () => {
 
       <div className="order-detail-summary">
         <h2>Thanh toán</h2>
-        {/* Tính toán lại từ items nếu totals không có total và savings (đơn hàng cũ) */}
+        {/* Tính toán lại từ items nếu totals không có (đơn hàng cũ) */}
         {(() => {
-          const calculatedSubTotal = order.items.reduce(
+          const calculatedOriginalTotal = order.items.reduce(
             (sum, item) => sum + (item.oldPrice || item.price) * item.quantity,
             0
           );
@@ -217,8 +217,11 @@ const OrderCheck: React.FC = () => {
             (sum, item) => sum + item.price * item.quantity,
             0
           );
-          const calculatedSavings = calculatedSubTotal - calculatedTotal;
-          const subTotal = order.totals.total ? order.totals.subTotal : calculatedSubTotal;
+          const calculatedSavings = calculatedOriginalTotal - calculatedTotal;
+          
+          // Sử dụng giá trị từ totals nếu có, nếu không thì tính lại
+          const subTotal = order.totals.subTotal !== undefined ? order.totals.subTotal : calculatedTotal;
+          const total = order.totals.total !== undefined ? order.totals.total : calculatedTotal;
           const savings = order.totals.savings !== undefined ? order.totals.savings : calculatedSavings;
           
           return (
@@ -235,9 +238,9 @@ const OrderCheck: React.FC = () => {
                   </span>
                 </div>
               )}
-              <div className="order-detail-sumrow">
-                <span>Phí vận chuyển</span>
-                <span>{order.totals.shippingFee.toLocaleString()}đ</span>
+              <div className="order-detail-sumrow" style={{ fontWeight: 600, paddingTop: "8px", borderTop: "1px solid #e0e0e0" }}>
+                <span>Thành tiền</span>
+                <span style={{ color: "#d90019", fontWeight: 600 }}>{total.toLocaleString()}đ</span>
               </div>
               {order.totals.discount > 0 && (
                 <div className="order-detail-sumrow">
@@ -245,6 +248,10 @@ const OrderCheck: React.FC = () => {
                   <span>-{order.totals.discount.toLocaleString()}đ</span>
                 </div>
               )}
+              <div className="order-detail-sumrow">
+                <span>Phí vận chuyển</span>
+                <span>{order.totals.shippingFee.toLocaleString()}đ</span>
+              </div>
               <div className="order-detail-sumrow order-detail-sumtotal">
                 <span>Tổng cộng</span>
                 <span>{order.totals.grandTotal.toLocaleString()}đ</span>

@@ -146,12 +146,12 @@ const createOrder = async (req, res) => {
     }
 
     const totals = {
-      subTotal, // Tạm tính (giá gốc)
-      total, // Tổng tiền (giá giảm)
+      subTotal: total, // Tạm tính (giá giảm)
+      total: total, // Thành tiền (giá giảm - trước voucher)
       savings, // Tiết kiệm
       shippingFee: parsedShippingFee,
       discount: parsedDiscount,
-      grandTotal: Math.max(total + parsedShippingFee - parsedDiscount, 0), // Tổng cộng (giá giảm + ship - discount)
+      grandTotal: Math.max(total + parsedShippingFee - parsedDiscount, 0), // Tổng cộng (thành tiền + ship - discount)
     };
 
     // Retry logic để xử lý duplicate key error
