@@ -31,13 +31,12 @@ const AdminAddProduct: React.FC = () => {
   const [originalPrice, setOriginalPrice] = useState("");
   const [price, setPrice] = useState("");
   const [salePercent, setSalePercent] = useState("0");
-  const [stock, setStock] = useState("");
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [tag, setTag] = useState<string>("");
-  const [color, setColor] = useState(""); // Comma-separated: "Đen, Trắng, Xám"
+  const [colorStocks, setColorStocks] = useState<Array<{ name: string; stock: number }>>([]);
 
   // Fetch categories và brands
   useEffect(() => {
@@ -73,10 +72,9 @@ const AdminAddProduct: React.FC = () => {
     formData.append("code", code);
     formData.append("price", price);
     formData.append("salePercent", salePercent || "0");
-    formData.append("stock", stock);
     formData.append("category", category);
     formData.append("brand", brand);
-    formData.append("color", color);
+    formData.append("colorStocks", JSON.stringify(colorStocks)); // Mảng màu với số lượng
     formData.append("image", file);
     
     // Thêm nhiều ảnh phụ
@@ -117,6 +115,21 @@ const AdminAddProduct: React.FC = () => {
 
   const removeFile = (index: number) => {
     setFiles(files.filter((_, i) => i !== index));
+  };
+
+  // Xử lý màu sắc với số lượng
+  const addColorStock = () => {
+    setColorStocks([...colorStocks, { name: "", stock: 0 }]);
+  };
+
+  const removeColorStock = (index: number) => {
+    setColorStocks(colorStocks.filter((_, i) => i !== index));
+  };
+
+  const updateColorStock = (index: number, field: "name" | "stock", value: string | number) => {
+    const updated = [...colorStocks];
+    updated[index] = { ...updated[index], [field]: value };
+    setColorStocks(updated);
   };
 
   return (
@@ -207,26 +220,91 @@ const AdminAddProduct: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label>Số lượng</label>
-          <input 
-            type="number"
-            value={stock}
-            onChange={(e) => setStock(e.target.value)}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Màu sắc (nhiều màu)</label>
-          <input 
-            type="text"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            placeholder="Nhập các màu cách nhau bởi dấu phẩy. Ví dụ: Đen, Trắng, Xám, Bạc"
-          />
-          <small style={{ color: "#666", fontSize: "12px", marginTop: "4px", display: "block" }}>
-            💡 Tip: Nhập nhiều màu cách nhau bởi dấu phẩy. Ví dụ: "Đen, Trắng, Xám"
-          </small>
+          <label>Màu sắc và số lượng</label>
+          <div style={{ marginBottom: "10px" }}>
+            <button
+              type="button"
+              onClick={addColorStock}
+              style={{
+                padding: "8px 16px",
+                background: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontSize: "14px",
+                marginBottom: "15px"
+              }}
+            >
+              <i className="fa fa-plus" style={{ marginRight: "5px" }}></i>
+              Thêm màu
+            </button>
+          </div>
+          
+          {colorStocks.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {colorStocks.map((colorStock, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    alignItems: "center",
+                    padding: "10px",
+                    background: "#f8f9fa",
+                    borderRadius: "5px",
+                    border: "1px solid #ddd"
+                  }}
+                >
+                  <input
+                    type="text"
+                    value={colorStock.name}
+                    onChange={(e) => updateColorStock(index, "name", e.target.value)}
+                    placeholder="Tên màu (ví dụ: Đen)"
+                    style={{
+                      flex: 1,
+                      padding: "8px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px"
+                    }}
+                  />
+                  <input
+                    type="number"
+                    value={colorStock.stock}
+                    onChange={(e) => updateColorStock(index, "stock", parseInt(e.target.value) || 0)}
+                    placeholder="Số lượng"
+                    min="0"
+                    style={{
+                      width: "120px",
+                      padding: "8px",
+                      border: "1px solid #ddd",
+                      borderRadius: "4px"
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeColorStock(index)}
+                    style={{
+                      padding: "8px 12px",
+                      background: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <i className="fa fa-trash"></i>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {colorStocks.length === 0 && (
+            <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "4px" }}>
+              Nhấn "Thêm màu" để thêm màu sắc và số lượng cho từng màu. Số lượng sẽ được tính tự động từ tổng số lượng các màu.
+            </small>
+          )}
         </div>
 
         <div className="form-group">

@@ -168,3 +168,21 @@ export const cancelOrder = async (
   return response.data;
 };
 
+// MOMO Payment
+export interface MomoPaymentResponse {
+  success: boolean;
+  payUrl?: string;
+  message?: string;
+}
+
+export const createMomoPayment = async (
+  total_momo: number,
+  orderId?: string
+): Promise<MomoPaymentResponse> => {
+  const response = await axios.post<MomoPaymentResponse>(
+    `${API_URL}/momo/create`,
+    { total_momo, orderId }
+  );
+  return response.data;
+};
+

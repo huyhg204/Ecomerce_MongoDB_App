@@ -31,6 +31,7 @@ import Cart from "../pages/user/Cart";
 import Checkout from "../pages/user/Checkout";
 import Orders from "../pages/user/Orders";
 import OrderCheck from "../pages/user/ordercheck";
+import OrderSuccess from "../pages/user/OrderSuccess";
 import Profile from "../pages/user/Profile";
 import Forgotpass from "../pages/user/forgotpass";
 import ProductDetail from "../pages/user/ProductDetail";
@@ -73,6 +74,14 @@ const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <OrderCheck />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="order-success"
+            element={
+              <ProtectedRoute>
+                <OrderSuccess />
               </ProtectedRoute>
             }
           />

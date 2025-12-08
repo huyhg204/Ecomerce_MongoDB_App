@@ -84,17 +84,23 @@ const AdminOrders: React.FC = () => {
     try {
       setLoading(true);
       const res = await getAllOrders(filter === "all" ? undefined : filter);
-      setOrders(res.data);
+      // Sắp xếp đơn hàng mới nhất lên đầu
+      const sortedOrders = [...res.data].sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA; // Giảm dần (mới nhất lên đầu)
+      });
+      setOrders(sortedOrders);
 
       const prevId = selectedOrderIdRef.current;
       let nextSelected: Order | null = null;
-      if (!res.data.length) {
+      if (!sortedOrders.length) {
         nextSelected = null;
       } else if (prevId) {
         nextSelected =
-          res.data.find((o) => o._id === prevId) ?? res.data[0];
+          sortedOrders.find((o) => o._id === prevId) ?? sortedOrders[0];
       } else {
-        nextSelected = res.data[0];
+        nextSelected = sortedOrders[0];
       }
 
       setSelectedOrder(nextSelected);

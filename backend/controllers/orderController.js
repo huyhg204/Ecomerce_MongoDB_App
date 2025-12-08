@@ -106,10 +106,35 @@ const createOrder = async (req, res) => {
           message: `Sản phẩm "${item.name}" không tồn tại.`,
         });
       }
-      if (!product.inStock || product.stock < item.quantity) {
+      if (!product.inStock) {
         return res.status(400).json({
           success: false,
-          message: `Sản phẩm "${item.name}" không đủ số lượng. Số lượng còn lại: ${product.stock}`,
+          message: `Sản phẩm "${item.name}" hiện không còn hàng.`,
+        });
+      }
+
+      // Kiểm tra stock theo màu nếu có colorStocks
+      const colorName = item.selectedColor || "";
+      let availableStock = product.stock; // Stock tổng (fallback)
+
+      if (product.colorStocks && product.colorStocks.length > 0) {
+        const colorStock = product.colorStocks.find(
+          (cs) => cs.name === colorName
+        );
+        if (colorStock) {
+          availableStock = colorStock.stock;
+        } else if (colorName) {
+          return res.status(400).json({
+            success: false,
+            message: `Màu "${colorName}" không có trong sản phẩm "${item.name}".`,
+          });
+        }
+      }
+
+      if (availableStock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Sản phẩm "${item.name}" (màu: ${colorName || "không có"}) không đủ số lượng. Số lượng còn lại: ${availableStock}`,
         });
       }
     }
@@ -199,16 +224,47 @@ const createOrder = async (req, res) => {
 
     // Giảm stock của các sản phẩm sau khi tạo order thành công
     for (const item of items) {
+      const product = await Product.findById(item.productId);
+      const colorName = item.selectedColor || "";
+
+      // Giảm stock tổng
       await Product.findByIdAndUpdate(
         item.productId,
-        { $inc: { stock: -item.quantity } }, // Giảm stock
+        { $inc: { stock: -item.quantity } },
         { new: true }
       );
+
+      // Giảm stock theo màu nếu có colorStocks
+      if (product.colorStocks && product.colorStocks.length > 0) {
+        const colorStockIndex = product.colorStocks.findIndex(
+          (cs) => cs.name === colorName
+        );
+        if (colorStockIndex !== -1) {
+          const updateField = `colorStocks.${colorStockIndex}.stock`;
+          await Product.findByIdAndUpdate(
+            item.productId,
+            { $inc: { [updateField]: -item.quantity } },
+            { new: true }
+          );
+        }
+      }
       
       // Kiểm tra và cập nhật inStock nếu stock = 0
       const updatedProduct = await Product.findById(item.productId);
-      if (updatedProduct && updatedProduct.stock <= 0) {
-        await Product.findByIdAndUpdate(item.productId, { inStock: false });
+      if (updatedProduct) {
+        // Kiểm tra stock tổng
+        if (updatedProduct.stock <= 0) {
+          await Product.findByIdAndUpdate(item.productId, { inStock: false });
+        }
+        // Kiểm tra stock theo màu
+        if (updatedProduct.colorStocks && updatedProduct.colorStocks.length > 0) {
+          const allColorsOutOfStock = updatedProduct.colorStocks.every(
+            (cs) => cs.stock <= 0
+          );
+          if (allColorsOutOfStock) {
+            await Product.findByIdAndUpdate(item.productId, { inStock: false });
+          }
+        }
       }
     }
 
@@ -357,11 +413,30 @@ const updateOrderStatus = async (req, res) => {
     // Nếu hủy đơn hàng, hoàn lại stock
     if (status === "cancelled" && oldStatus !== "cancelled") {
       for (const item of order.items) {
+        const product = await Product.findById(item.productId);
+        const colorName = item.selectedColor || "";
+
+        // Hoàn lại stock tổng
         await Product.findByIdAndUpdate(
           item.productId,
-          { $inc: { stock: item.quantity } }, // Hoàn lại stock
+          { $inc: { stock: item.quantity } },
           { new: true }
         );
+
+        // Hoàn lại stock theo màu nếu có colorStocks
+        if (product && product.colorStocks && product.colorStocks.length > 0) {
+          const colorStockIndex = product.colorStocks.findIndex(
+            (cs) => cs.name === colorName
+          );
+          if (colorStockIndex !== -1) {
+            const updateField = `colorStocks.${colorStockIndex}.stock`;
+            await Product.findByIdAndUpdate(
+              item.productId,
+              { $inc: { [updateField]: item.quantity } },
+              { new: true }
+            );
+          }
+        }
         
         // Cập nhật inStock nếu stock > 0
         const updatedProduct = await Product.findById(item.productId);
@@ -432,11 +507,30 @@ const cancelOrder = async (req, res) => {
 
     // Hoàn lại stock khi hủy đơn
     for (const item of order.items) {
+      const product = await Product.findById(item.productId);
+      const colorName = item.selectedColor || "";
+
+      // Hoàn lại stock tổng
       await Product.findByIdAndUpdate(
         item.productId,
-        { $inc: { stock: item.quantity } }, // Hoàn lại stock
+        { $inc: { stock: item.quantity } },
         { new: true }
       );
+
+      // Hoàn lại stock theo màu nếu có colorStocks
+      if (product && product.colorStocks && product.colorStocks.length > 0) {
+        const colorStockIndex = product.colorStocks.findIndex(
+          (cs) => cs.name === colorName
+        );
+        if (colorStockIndex !== -1) {
+          const updateField = `colorStocks.${colorStockIndex}.stock`;
+          await Product.findByIdAndUpdate(
+            item.productId,
+            { $inc: { [updateField]: item.quantity } },
+            { new: true }
+          );
+        }
+      }
       
       // Cập nhật inStock nếu stock > 0
       const updatedProduct = await Product.findById(item.productId);

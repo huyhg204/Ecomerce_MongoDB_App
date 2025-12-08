@@ -230,14 +230,14 @@ const seedData = async () => {
     // 4. Tạo Products
     console.log('📦 Đang tạo Products...');
     
-    // Helper function để tạo product data với code và stock
+    // Helper function để tạo product data với code và colorStocks
     // price: giá bán (sau khi giảm nếu có salePercent)
     // salePercent: phần trăm giảm giá (0-100)
     // oldPrice sẽ được tự động tính bởi Product model middleware
     // tag: single tag "sale", "new", "featured" hoặc null
     // images: mảng các ảnh phụ (optional)
     // color: màu sắc sản phẩm (optional)
-    const createProduct = (name, originalPrice, salePercent, brandName, image, categoryId, stock = 50, tag = null, images = [], color = "") => {
+    const createProduct = (name, originalPrice, salePercent, brandName, image, categoryId, tag = null, images = [], color = "") => {
       const brandCode = brandName.substring(0, 3).toUpperCase();
       const productCode = `${brandCode}-${name.substring(name.length - 3).toUpperCase().replace(/\s/g, '')}-${Math.floor(Math.random() * 1000)}`;
       // Thêm đường dẫn img/ vào trước tên file hình ảnh
@@ -281,6 +281,15 @@ const seedData = async () => {
         productColors = shuffled.slice(0, numColors);
       }
       
+      // Tạo colorStocks với số lượng ngẫu nhiên cho mỗi màu (10-100 mỗi màu)
+      const colorStocks = productColors.map(colorName => ({
+        name: colorName,
+        stock: Math.floor(Math.random() * 91) + 10 // 10-100
+      }));
+      
+      // Tính stock tổng từ colorStocks
+      const totalStock = colorStocks.reduce((sum, cs) => sum + cs.stock, 0);
+      
       return {
         name,
         code: productCode,
@@ -291,11 +300,12 @@ const seedData = async () => {
         image: imagePath,
         images: imagesArray, // Mảng các ảnh phụ
         category: categoryId,
-        inStock: true,
-        stock,
+        inStock: totalStock > 0,
+        stock: totalStock, // Tự động tính từ colorStocks
         isActive: true, // Trạng thái hoạt động
         tag: tag || null, // Chỉ 1 tag
-        color: productColors // Mảng màu sắc
+        color: productColors, // Mảng màu sắc (backward compatibility)
+        colorStocks: colorStocks // Mảng màu với số lượng riêng
       };
     };
     
@@ -343,42 +353,42 @@ const seedData = async () => {
     // Images: mảng các ảnh phụ (tối đa 10 ảnh)
     const products = await Product.insertMany([
       // Laptop Dell
-      createProduct('Laptop Dell XPS 13', 25990000, 10, 'Dell', productImages[0], categories[0]._id, 50, 'featured', [productImages[1], productImages[2]]),
-      createProduct('Laptop Dell Inspiron 15', 17990000, 7, 'Dell', productImages[7], categories[0]._id, 45, 'sale', [productImages[8], productImages[9]]),
-      createProduct('Laptop Dell Latitude 5520', 20990000, 0, 'Dell', productImages[21], categories[0]._id, 30, 'new', [productImages[22], productImages[23]]),
-      createProduct('Laptop Dell G15 Gaming', 21990000, 12, 'Dell', productImages[28], categories[0]._id, 40, 'sale', [productImages[29], productImages[0]]),
-      createProduct('Laptop Dell Alienware M15', 49990000, 10, 'Dell', productImages[14], categories[0]._id, 20, 'sale', [productImages[15], productImages[16], productImages[17]]),
+      createProduct('Laptop Dell XPS 13', 25990000, 10, 'Dell', productImages[0], categories[0]._id, 'featured', [productImages[1], productImages[2]]),
+      createProduct('Laptop Dell Inspiron 15', 17990000, 7, 'Dell', productImages[7], categories[0]._id, 'sale', [productImages[8], productImages[9]]),
+      createProduct('Laptop Dell Latitude 5520', 20990000, 0, 'Dell', productImages[21], categories[0]._id, 'new', [productImages[22], productImages[23]]),
+      createProduct('Laptop Dell G15 Gaming', 21990000, 12, 'Dell', productImages[28], categories[0]._id, 'sale', [productImages[29], productImages[0]]),
+      createProduct('Laptop Dell Alienware M15', 49990000, 10, 'Dell', productImages[14], categories[0]._id, 'sale', [productImages[15], productImages[16], productImages[17]]),
       // Laptop Apple
-      createProduct('MacBook Pro M2 14 inch', 45990000, 5, 'Apple', productImages[1], categories[0]._id, 35, 'featured', [productImages[2], productImages[3], productImages[4]]),
-      createProduct('MacBook Air M1', 29990000, 0, 'Apple', productImages[8], categories[0]._id, 60, 'new', [productImages[9], productImages[10]]),
-      createProduct('MacBook Pro M3 16 inch', 54990000, 0, 'Apple', productImages[15], categories[0]._id, 25, 'new', [productImages[16], productImages[17], productImages[18]]),
-      createProduct('MacBook Air M2', 32990000, 0, 'Apple', productImages[22], categories[0]._id, 55, 'featured', [productImages[23], productImages[24]]),
+      createProduct('MacBook Pro M2 14 inch', 45990000, 5, 'Apple', productImages[1], categories[0]._id, 'featured', [productImages[2], productImages[3], productImages[4]]),
+      createProduct('MacBook Air M1', 29990000, 0, 'Apple', productImages[8], categories[0]._id, 'new', [productImages[9], productImages[10]]),
+      createProduct('MacBook Pro M3 16 inch', 54990000, 0, 'Apple', productImages[15], categories[0]._id, 'new', [productImages[16], productImages[17], productImages[18]]),
+      createProduct('MacBook Air M2', 32990000, 0, 'Apple', productImages[22], categories[0]._id, 'featured', [productImages[23], productImages[24]]),
       // Laptop ASUS
-      createProduct('Laptop ASUS ROG Strix G15', 32990000, 15, 'ASUS', productImages[2], categories[0]._id, 40, 'sale', [productImages[3], productImages[4], productImages[5]]),
-      createProduct('Laptop ASUS VivoBook S15', 16990000, 10, 'ASUS', productImages[9], categories[0]._id, 70, 'sale', [productImages[10], productImages[11]]),
-      createProduct('Laptop ASUS ZenBook 14', 22990000, 8, 'ASUS', productImages[16], categories[0]._id, 50, 'new', [productImages[17], productImages[18], productImages[19]]),
-      createProduct('Laptop ASUS TUF Gaming F15', 23990000, 10, 'ASUS', productImages[23], categories[0]._id, 45, 'sale', [productImages[24], productImages[25]]),
-      createProduct('Laptop ASUS ProArt StudioBook', 39990000, 0, 'ASUS', productImages[29], categories[0]._id, 15, 'featured', [productImages[0], productImages[1], productImages[2]]),
+      createProduct('Laptop ASUS ROG Strix G15', 32990000, 15, 'ASUS', productImages[2], categories[0]._id, 'sale', [productImages[3], productImages[4], productImages[5]]),
+      createProduct('Laptop ASUS VivoBook S15', 16990000, 10, 'ASUS', productImages[9], categories[0]._id, 'sale', [productImages[10], productImages[11]]),
+      createProduct('Laptop ASUS ZenBook 14', 22990000, 8, 'ASUS', productImages[16], categories[0]._id, 'new', [productImages[17], productImages[18], productImages[19]]),
+      createProduct('Laptop ASUS TUF Gaming F15', 23990000, 10, 'ASUS', productImages[23], categories[0]._id, 'sale', [productImages[24], productImages[25]]),
+      createProduct('Laptop ASUS ProArt StudioBook', 39990000, 0, 'ASUS', productImages[29], categories[0]._id, 'featured', [productImages[0], productImages[1], productImages[2]]),
       // Laptop HP
-      createProduct('Laptop HP Pavilion 15', 18990000, 0, 'HP', productImages[3], categories[0]._id, 65, 'new', [productImages[4], productImages[5]]),
-      createProduct('Laptop HP EliteBook 840', 23990000, 5, 'HP', productImages[10], categories[0]._id, 40, 'sale', [productImages[11], productImages[12], productImages[13]]),
-      createProduct('Laptop HP Omen 16', 28990000, 12, 'HP', productImages[17], categories[0]._id, 35, 'sale', [productImages[18], productImages[19]]),
-      createProduct('Laptop HP Spectre x360', 29990000, 0, 'HP', productImages[24], categories[0]._id, 30, 'featured', [productImages[25], productImages[26], productImages[27]]),
+      createProduct('Laptop HP Pavilion 15', 18990000, 0, 'HP', productImages[3], categories[0]._id, 'new', [productImages[4], productImages[5]]),
+      createProduct('Laptop HP EliteBook 840', 23990000, 5, 'HP', productImages[10], categories[0]._id, 'sale', [productImages[11], productImages[12], productImages[13]]),
+      createProduct('Laptop HP Omen 16', 28990000, 12, 'HP', productImages[17], categories[0]._id, 'sale', [productImages[18], productImages[19]]),
+      createProduct('Laptop HP Spectre x360', 29990000, 0, 'HP', productImages[24], categories[0]._id, 'featured', [productImages[25], productImages[26], productImages[27]]),
       // Laptop Lenovo
-      createProduct('Laptop Lenovo ThinkPad X1', 21990000, 8, 'Lenovo', productImages[4], categories[0]._id, 45, 'new', [productImages[5], productImages[6], productImages[7]]),
-      createProduct('Laptop Lenovo Yoga 9i', 24990000, 0, 'Lenovo', productImages[11], categories[0]._id, 40, 'new', [productImages[12], productImages[13]]),
-      createProduct('Laptop Lenovo Legion 5', 26990000, 0, 'Lenovo', productImages[18], categories[0]._id, 50, 'featured', [productImages[19], productImages[20], productImages[21]]),
-      createProduct('Laptop Lenovo IdeaPad 3', 14990000, 15, 'Lenovo', productImages[25], categories[0]._id, 80, 'sale', [productImages[26], productImages[27]]),
+      createProduct('Laptop Lenovo ThinkPad X1', 21990000, 8, 'Lenovo', productImages[4], categories[0]._id, 'new', [productImages[5], productImages[6], productImages[7]]),
+      createProduct('Laptop Lenovo Yoga 9i', 24990000, 0, 'Lenovo', productImages[11], categories[0]._id, 'new', [productImages[12], productImages[13]]),
+      createProduct('Laptop Lenovo Legion 5', 26990000, 0, 'Lenovo', productImages[18], categories[0]._id, 'featured', [productImages[19], productImages[20], productImages[21]]),
+      createProduct('Laptop Lenovo IdeaPad 3', 14990000, 15, 'Lenovo', productImages[25], categories[0]._id, 'sale', [productImages[26], productImages[27]]),
       // Laptop Acer
-      createProduct('Laptop Acer Aspire 5', 15990000, 12, 'Acer', productImages[5], categories[0]._id, 75, 'sale', [productImages[6], productImages[7], productImages[8]]),
-      createProduct('Laptop Acer Nitro 5', 19990000, 15, 'Acer', productImages[12], categories[0]._id, 60, 'sale', [productImages[13], productImages[14]]),
-      createProduct('Laptop Acer Predator Helios', 31990000, 20, 'Acer', productImages[19], categories[0]._id, 25, 'featured', [productImages[20], productImages[21], productImages[22]]),
-      createProduct('Laptop Acer Swift 3', 17990000, 8, 'Acer', productImages[26], categories[0]._id, 55, 'new', [productImages[27], productImages[28]]),
+      createProduct('Laptop Acer Aspire 5', 15990000, 12, 'Acer', productImages[5], categories[0]._id, 'sale', [productImages[6], productImages[7], productImages[8]]),
+      createProduct('Laptop Acer Nitro 5', 19990000, 15, 'Acer', productImages[12], categories[0]._id, 'sale', [productImages[13], productImages[14]]),
+      createProduct('Laptop Acer Predator Helios', 31990000, 20, 'Acer', productImages[19], categories[0]._id, 'featured', [productImages[20], productImages[21], productImages[22]]),
+      createProduct('Laptop Acer Swift 3', 17990000, 8, 'Acer', productImages[26], categories[0]._id, 'new', [productImages[27], productImages[28]]),
       // Laptop MSI
-      createProduct('Laptop MSI Gaming GF63', 27990000, 0, 'MSI', productImages[6], categories[0]._id, 50, 'new', [productImages[7], productImages[8], productImages[9]]),
-      createProduct('Laptop MSI Creator Z16', 34990000, 0, 'MSI', productImages[13], categories[0]._id, 30, 'featured', [productImages[14], productImages[15]]),
-      createProduct('Laptop MSI Stealth 15M', 37990000, 5, 'MSI', productImages[20], categories[0]._id, 35, 'new', [productImages[21], productImages[22], productImages[23]]),
-      createProduct('Laptop MSI Modern 14', 19990000, 10, 'MSI', productImages[27], categories[0]._id, 60, 'sale', [productImages[28], productImages[29]])
+      createProduct('Laptop MSI Gaming GF63', 27990000, 0, 'MSI', productImages[6], categories[0]._id, 'new', [productImages[7], productImages[8], productImages[9]]),
+      createProduct('Laptop MSI Creator Z16', 34990000, 0, 'MSI', productImages[13], categories[0]._id, 'featured', [productImages[14], productImages[15]]),
+      createProduct('Laptop MSI Stealth 15M', 37990000, 5, 'MSI', productImages[20], categories[0]._id, 'new', [productImages[21], productImages[22], productImages[23]]),
+      createProduct('Laptop MSI Modern 14', 19990000, 10, 'MSI', productImages[27], categories[0]._id, 'sale', [productImages[28], productImages[29]])
     ]);
     console.log(`✅ Đã tạo ${products.length} products\n`);
 
@@ -479,20 +489,38 @@ const seedData = async () => {
         } while (usedProductIds.has(product._id.toString()));
         usedProductIds.add(product._id.toString());
         
+        const price = parseFloat(product.price.toString());
+        const oldPrice = product.oldPrice ? parseFloat(product.oldPrice.toString()) : price;
+        
         selectedProducts.push({
           productId: product._id,
           name: product.name,
           image: product.image,
-          price: parseFloat(product.price.toString()),
+          price: price, // Giá giảm (sau sale)
+          oldPrice: oldPrice, // Giá gốc
           quantity: Math.floor(Math.random() * 3) + 1
         });
       }
       
-      // Tính tổng
+      // Tính tổng theo logic mới
+      // Tổng tiền gốc (để tính tiết kiệm)
+      const originalTotal = selectedProducts.reduce((sum, item) => {
+        const hasSale = item.oldPrice > item.price && item.oldPrice > 0;
+        return sum + (hasSale ? item.oldPrice : item.price) * item.quantity;
+      }, 0);
+      
+      // Tạm tính (tổng tiền giá giảm)
       const subTotal = selectedProducts.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Thành tiền (giá giảm - trước voucher)
+      const total = subTotal;
+      
+      // Tiết kiệm
+      const savings = originalTotal - total;
+      
       const shippingFee = Math.random() > 0.5 ? 30000 : 0;
-      const discount = Math.random() > 0.7 ? Math.floor(subTotal * 0.1) : 0;
-      const grandTotal = subTotal + shippingFee - discount;
+      const discount = Math.random() > 0.7 ? Math.floor(total * 0.1) : 0;
+      const grandTotal = total + shippingFee - discount;
       
       // Random status (tỷ lệ: nhiều delivered/received, ít cancelled)
       let status;
@@ -555,7 +583,9 @@ const seedData = async () => {
         paymentStatus,
         status,
         totals: {
-          subTotal,
+          subTotal, // Tạm tính (giá giảm)
+          total, // Thành tiền (giá giảm - trước voucher)
+          savings, // Tiết kiệm
           shippingFee,
           discount,
           grandTotal

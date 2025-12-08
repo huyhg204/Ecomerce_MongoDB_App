@@ -108,19 +108,8 @@ const AdminLayout: React.FC = () => {
             <div className="admin-main">
 
                 {/* HEADER */}
-                <header className="admin-header">
-                    <button className="menu-toggle">
-                        <i className="fa-solid fa-bars"></i>
-                    </button>
-
-                    <div className="search">
-                        <i className="fa-solid fa-search"></i>
-                        <input type="text" placeholder="Tìm kiếm..." />
-                    </div>
-
+                <header className="admin-header" style={{ justifyContent: "flex-end" }}>
                     <div className="header-actions">
-                        <i className="fa-regular fa-bell"></i>
-
                         <div
                             ref={dropdownRef}
                             className={`admin-dropdown ${dropdownOpen ? "active" : ""}`}

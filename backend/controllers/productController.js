@@ -90,13 +90,32 @@ const getProductById = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
-    const { name, code, price, salePercent = 0, category, brand, inStock, stock, color } = req.body;
+    const { name, code, price, salePercent = 0, category, brand, inStock, color, colorStocks } = req.body;
     
-    // Xử lý color - có thể là string (comma-separated) hoặc array
+    // Xử lý colorStocks - mảng các object {name, stock}
+    let colorStocksArray = [];
+    if (colorStocks) {
+      try {
+        // Nếu là string JSON, parse nó
+        const parsed = typeof colorStocks === 'string' ? JSON.parse(colorStocks) : colorStocks;
+        if (Array.isArray(parsed)) {
+          colorStocksArray = parsed
+            .filter(cs => cs && cs.name && cs.name.trim().length > 0)
+            .map(cs => ({
+              name: cs.name.trim(),
+              stock: Number(cs.stock) || 0
+            }));
+        }
+      } catch (e) {
+        console.error("Lỗi parse colorStocks:", e);
+      }
+    }
+    
+    // Xử lý color - có thể là string (comma-separated) hoặc array (backward compatibility)
     let colorArray = [];
-    if (color) {
+    if (color && colorStocksArray.length === 0) {
+      // Chỉ xử lý color nếu không có colorStocks
       if (typeof color === 'string') {
-        // Nếu là string, split bằng dấu phẩy và trim
         colorArray = color.split(',').map(c => c.trim()).filter(c => c.length > 0);
       } else if (Array.isArray(color)) {
         colorArray = color.filter(c => c && c.trim().length > 0);
@@ -144,6 +163,9 @@ const addProduct = async (req, res) => {
       }
     }
 
+    // Tính stock tổng từ colorStocks
+    const totalStock = colorStocksArray.reduce((sum, cs) => sum + (cs.stock || 0), 0);
+    
     const newProduct = await Product.create({
       name,
       code: code || "",
@@ -153,10 +175,11 @@ const addProduct = async (req, res) => {
       brand: brand, // ObjectId
       image: imagePath,
       images: imagesArray,
-      inStock: inStock !== undefined ? (inStock === "true" || inStock === true) : true,
-      stock: stock ? Number(stock) : 0,
+      inStock: inStock !== undefined ? (inStock === "true" || inStock === true) : (totalStock > 0),
+      stock: totalStock, // Tự động tính từ colorStocks
       tag: tag,
-      color: colorArray,
+      color: colorArray, // Backward compatibility
+      colorStocks: colorStocksArray, // Mảng màu với số lượng riêng
     });
 
     // Populate để trả về thông tin đầy đủ
@@ -174,7 +197,7 @@ const addProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, code, price, salePercent, category, brand, inStock, stock, color } = req.body;
+    const { name, code, price, salePercent, category, brand, inStock, color, colorStocks } = req.body;
 
     const updateData = {};
 
@@ -188,11 +211,41 @@ const updateProduct = async (req, res) => {
     if (brand !== undefined) {
       updateData.brand = brand; // ObjectId
     }
-    if (inStock !== undefined) updateData.inStock = inStock === "true" || inStock === true;
-    if (stock !== undefined) updateData.stock = Number(stock);
+    // Xử lý colorStocks - mảng các object {name, stock}
+    if (colorStocks !== undefined) {
+      try {
+        const parsed = typeof colorStocks === 'string' ? JSON.parse(colorStocks) : colorStocks;
+        if (Array.isArray(parsed)) {
+          const colorStocksArray = parsed
+            .filter(cs => cs && cs.name && cs.name.trim().length > 0)
+            .map(cs => ({
+              name: cs.name.trim(),
+              stock: Number(cs.stock) || 0
+            }));
+          updateData.colorStocks = colorStocksArray;
+          // Tự động tính stock tổng từ colorStocks
+          const totalStock = colorStocksArray.reduce((sum, cs) => sum + (cs.stock || 0), 0);
+          updateData.stock = totalStock;
+          // Cập nhật inStock dựa trên stock
+          if (inStock === undefined) {
+            updateData.inStock = totalStock > 0;
+          }
+        } else if (parsed === null || parsed === '') {
+          updateData.colorStocks = [];
+          updateData.stock = 0;
+          if (inStock === undefined) {
+            updateData.inStock = false;
+          }
+        }
+      } catch (e) {
+        console.error("Lỗi parse colorStocks:", e);
+      }
+    }
     
-    // Xử lý color - có thể là string (comma-separated) hoặc array
-    if (color !== undefined) {
+    if (inStock !== undefined) updateData.inStock = inStock === "true" || inStock === true;
+    
+    // Xử lý color - có thể là string (comma-separated) hoặc array (backward compatibility)
+    if (color !== undefined && updateData.colorStocks === undefined) {
       let colorArray = [];
       if (typeof color === 'string' && color.trim().length > 0) {
         // Nếu là string, split bằng dấu phẩy và trim

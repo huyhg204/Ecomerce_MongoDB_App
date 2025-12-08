@@ -8,6 +8,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import {
   createOrder,
+  createMomoPayment,
   type ShippingInfo,
 } from "../../services/orderService";
 import { validateCoupon } from "../../services/couponService";
@@ -32,6 +33,7 @@ type CartResponse = {
 
 const PAYMENT_OPTIONS = [
   { value: "cod", label: "Thanh toán khi giao hàng (COD)" },
+  { value: "momo", label: "Thanh toán qua MOMO" },
 ];
 
 const Checkout: React.FC = () => {
@@ -40,7 +42,7 @@ const Checkout: React.FC = () => {
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
-  const [paymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [shippingFee] = useState(0);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -93,6 +95,7 @@ const Checkout: React.FC = () => {
     }
     fetchCart();
   }, [authLoading, isAuth, user, fetchCart, navigate]);
+
 
   useEffect(() => {
     setForm((prev) => ({
@@ -201,6 +204,52 @@ const Checkout: React.FC = () => {
 
     try {
       setPlacing(true);
+
+      // Nếu thanh toán MOMO
+      if (paymentMethod === "momo") {
+        // Kiểm tra grandTotal hợp lệ
+        const grandTotal = Number(totals.grandTotal);
+        if (!grandTotal || grandTotal <= 0 || isNaN(grandTotal)) {
+          toast.error("Số tiền thanh toán không hợp lệ. Vui lòng kiểm tra lại giỏ hàng.");
+          setPlacing(false);
+          return;
+        }
+
+        // Tạo đơn hàng trước
+        const orderResponse = await createOrder({
+          userId: user.id,
+          shippingInfo: form,
+          paymentMethod: "momo",
+          shippingFee,
+          couponCode: appliedCoupon?.code || undefined,
+          discount: appliedCoupon?.discount || 0,
+        });
+
+        // Kiểm tra order code
+        if (!orderResponse.data?.code) {
+          toast.error("Không thể tạo đơn hàng. Vui lòng thử lại.");
+          setPlacing(false);
+          return;
+        }
+
+        // Tạo payment URL từ MOMO
+        const momoResponse = await createMomoPayment(
+          grandTotal,
+          orderResponse.data.code
+        );
+
+        if (momoResponse.success && momoResponse.payUrl) {
+          // Redirect đến trang thanh toán MOMO
+          window.location.href = momoResponse.payUrl;
+          return;
+        } else {
+          toast.error(momoResponse.message || "Không thể tạo link thanh toán MOMO");
+          setPlacing(false);
+          return;
+        }
+      }
+
+      // Thanh toán COD
       const response = await createOrder({
         userId: user.id,
         shippingInfo: form,
@@ -211,13 +260,18 @@ const Checkout: React.FC = () => {
       });
 
       toast.success("Đặt hàng thành công!");
-      navigate(`/orders/${response.data._id}`);
+      navigate(`/order-success?orderId=${response.data._id}`);
     } catch (error) {
       console.error("placeOrder error:", error);
-      const err = error as { response?: { data?: { message?: string } } };
+      const err = error as { response?: { data?: { message?: string; success?: boolean } } };
       const message =
         err.response?.data?.message || "Không thể đặt hàng. Thử lại sau.";
       toast.error(message);
+      
+      // Log chi tiết để debug
+      if (err.response?.data) {
+        console.error("Error details:", err.response.data);
+      }
     } finally {
       setPlacing(false);
     }
@@ -332,7 +386,7 @@ const Checkout: React.FC = () => {
               <div className="checkout-card-heading">
                 <div>
                   <h3>Phương thức thanh toán</h3>
-                  <p>Thanh toán khi nhận hàng (COD).</p>
+                  <p>Chọn phương thức thanh toán phù hợp với bạn.</p>
                 </div>
               </div>
               <div className="checkout-payment-list">
@@ -343,7 +397,7 @@ const Checkout: React.FC = () => {
                       name="paymentMethod"
                       value={option.value}
                       checked={paymentMethod === option.value}
-                      readOnly
+                      onChange={(e) => setPaymentMethod(e.target.value)}
                     />
                     <span className="checkout-pay-radio"></span>
                     {option.label}

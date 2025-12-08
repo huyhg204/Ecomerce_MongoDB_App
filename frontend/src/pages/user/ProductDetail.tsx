@@ -204,7 +204,9 @@ const ProductDetail = () => {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Không thể đồng bộ giỏ hàng. Vui lòng thử lại.");
+      const err = error as { response?: { data?: { message?: string } } };
+      const errorMessage = err.response?.data?.message || "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.";
+      toast.error(errorMessage);
     } finally {
       setAddingToCart(false);
     }
@@ -244,7 +246,9 @@ const ProductDetail = () => {
       navigate("/checkout");
     } catch (error) {
       console.error(error);
-      toast.error("Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.");
+      const err = error as { response?: { data?: { message?: string } } };
+      const errorMessage = err.response?.data?.message || "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.";
+      toast.error(errorMessage);
     } finally {
       setBuyingNow(false);
     }

@@ -42,14 +42,21 @@ const productSchema = new mongoose.Schema(
       default: null,
     },
     inStock: { type: Boolean, default: true },
-    stock: { type: Number, default: 0, min: 0 }, // Số lượng tồn kho
+    stock: { type: Number, default: 0, min: 0 }, // Số lượng tồn kho tổng (tính từ colorStocks nếu có)
     isActive: { type: Boolean, default: true }, // Trạng thái hoạt động (soft delete)
     tag: { 
       type: String, 
       default: null,
       enum: ["sale", "new", "featured", null] // Sản phẩm khuyến mãi, mới nhất, nổi bật (chỉ 1 tag)
     },
-    color: { type: [String], default: [] }, // Mảng màu sắc sản phẩm (ví dụ: ["Đen", "Trắng", "Xám"])
+    color: { type: [String], default: [] }, // Mảng màu sắc sản phẩm (ví dụ: ["Đen", "Trắng", "Xám"]) - giữ lại để backward compatibility
+    colorStocks: { 
+      type: [{ 
+        name: { type: String, required: true }, // Tên màu
+        stock: { type: Number, required: true, min: 0 } // Số lượng cho màu này
+      }], 
+      default: [] 
+    }, // Mảng màu sắc với số lượng riêng (ví dụ: [{name: "Đen", stock: 10}, {name: "Trắng", stock: 5}])
   },
   {
     timestamps: true,
@@ -68,6 +75,14 @@ productSchema.pre("save", function (next) {
   } else {
     this.oldPrice = this.price;
   }
+  
+  // Tự động tính tổng stock từ colorStocks nếu có
+  if (this.colorStocks && this.colorStocks.length > 0) {
+    this.stock = this.colorStocks.reduce((sum, colorStock) => sum + (colorStock.stock || 0), 0);
+    // Cập nhật mảng color từ colorStocks để backward compatibility
+    this.color = this.colorStocks.map(cs => cs.name).filter(name => name && name.trim().length > 0);
+  }
+  
   next();
 });
 
@@ -88,6 +103,13 @@ productSchema.pre("findOneAndUpdate", function (next) {
     } else {
       update.oldPrice = Decimal128Type.fromString(price.toString());
     }
+  }
+  
+  // Tự động tính tổng stock từ colorStocks nếu có
+  if (update.colorStocks && Array.isArray(update.colorStocks) && update.colorStocks.length > 0) {
+    update.stock = update.colorStocks.reduce((sum, colorStock) => sum + (colorStock.stock || 0), 0);
+    // Cập nhật mảng color từ colorStocks để backward compatibility
+    update.color = update.colorStocks.map(cs => cs.name).filter(name => name && name.trim().length > 0);
   }
 
   next();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../user/css/style.css";
 import "../user/css/product-list.css";
@@ -57,10 +57,17 @@ const ProductList: React.FC = () => {
   const itemsPerPage = 12;
 
   const location = useLocation();
+  const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const query = params.get("search") || "";
   const { user } = useAuth();
   const userId = user?.id;
+
+  // Hàm xóa tìm kiếm
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    navigate("/products");
+  };
 
   // ⚡ FIX HÀM CHUẨN HÓA Decimal128 → number
   const toNumber = (value: number | string | { $numberDecimal?: string } | undefined): number => {
@@ -141,7 +148,9 @@ const ProductList: React.FC = () => {
       toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
     } catch (err) {
       console.error(err);
-      toast.error("Không thể đồng bộ giỏ hàng. Vui lòng thử lại.");
+      const error = err as { response?: { data?: { message?: string } } };
+      const errorMessage = error.response?.data?.message || "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại.";
+      toast.error(errorMessage);
     }
   };
 
@@ -323,9 +332,36 @@ const ProductList: React.FC = () => {
           {/* -------------------------------- */}
           <section className="product-list-content">
             <div className="product-list-header">
-              <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                 {searchTerm ? (
-                  <span>Kết quả tìm kiếm: "<strong>{searchTerm}</strong>" ({filteredProducts.length} sản phẩm)</span>
+                  <>
+                    <span>Kết quả tìm kiếm: "<strong>{searchTerm}</strong>" ({filteredProducts.length} sản phẩm)</span>
+                    <button
+                      onClick={handleClearSearch}
+                      style={{
+                        padding: "6px 12px",
+                        backgroundColor: "#f5f5f5",
+                        color: "#333",
+                        border: "1px solid #ddd",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#e8e8e8";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f5f5f5";
+                      }}
+                    >
+                      <i className="fa-solid fa-times"></i>
+                      Xóa tìm kiếm
+                    </button>
+                  </>
                 ) : (
                   <span>Tất cả sản phẩm <strong>({filteredProducts.length})</strong></span>
                 )}

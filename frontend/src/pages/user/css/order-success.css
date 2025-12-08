@@ -1,0 +1,229 @@
+.order-success-main {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 40px 20px;
+}
+
+.order-success-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  padding: 60px 40px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Breadcrumb */
+.order-success-breadcrumb {
+  margin-bottom: 30px;
+  font-size: 14px;
+  color: #666;
+}
+
+.order-success-breadcrumb a {
+  color: #666;
+  text-decoration: none;
+}
+
+.order-success-breadcrumb a:hover {
+  color: #007bff;
+}
+
+.order-success-breadcrumb span {
+  margin: 0 8px;
+  color: #999;
+}
+
+.order-success-breadcrumb .active {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Header */
+.order-success-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.order-success-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.order-success-icon i {
+  font-size: 40px;
+  color: white;
+}
+
+.order-success-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #28a745;
+  margin: 0 0 15px 0;
+}
+
+.order-success-message {
+  font-size: 16px;
+  color: #333;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Order Code Box */
+.order-success-code-box {
+  background: #f8f9fa;
+  border: 2px solid #d4edda;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.order-success-code-label {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.order-success-code-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: #007bff;
+}
+
+/* Email Box */
+.order-success-email-box {
+  background: #e7f3ff;
+  border-left: 4px solid #007bff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.order-success-email-box i {
+  font-size: 24px;
+  color: #007bff;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.order-success-email-box p {
+  margin: 0;
+  color: #333;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+/* Action Buttons */
+.order-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.order-success-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  border: 2px solid transparent;
+}
+
+.order-success-btn i {
+  font-size: 18px;
+}
+
+.order-success-btn-primary {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.order-success-btn-primary:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.order-success-btn-secondary {
+  background: white;
+  color: #007bff;
+  border-color: #007bff;
+}
+
+.order-success-btn-secondary:hover {
+  background: #f8f9fa;
+}
+
+/* Notice Box */
+.order-success-notice {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 30px;
+}
+
+.order-success-notice strong {
+  display: block;
+  color: #856404;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.order-success-notice p {
+  margin: 0;
+  color: #856404;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .order-success-container {
+    padding: 40px 20px;
+  }
+
+  .order-success-title {
+    font-size: 24px;
+  }
+
+  .order-success-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .order-success-icon i {
+    font-size: 30px;
+  }
+
+  .order-success-code-value {
+    font-size: 20px;
+  }
+
+  .order-success-actions {
+    gap: 12px;
+  }
+
+  .order-success-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}

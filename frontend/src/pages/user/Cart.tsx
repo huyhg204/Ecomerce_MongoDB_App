@@ -86,26 +86,29 @@ const Cart: React.FC = () => {
         }
     }, [user?.id, buildLocalCart]);
 
-    const updateQty = async (productId: string, qty: number) => {
+    const updateQty = async (productId: string, selectedColor: string | undefined, qty: number) => {
         if (qty < 1) return;
         if (!user?.id) {
-            updateStoredCartQuantity(productId, qty);
+            updateStoredCartQuantity(productId, selectedColor || "", qty);
             setCart(buildLocalCart());
             return;
         }
         try {
-            setUpdatingId(productId);
+            const uniqueKey = `${productId}_${selectedColor || ""}`;
+            setUpdatingId(uniqueKey);
             await axios.post("http://localhost:5000/api/cart/update", {
                 userId: user.id,
                 productId,
+                selectedColor: selectedColor || "",
                 quantity: qty,
             });
-            // Cập nhật local state thay vì fetch lại
+            // Cập nhật local state thay vì fetch lại - tìm đúng item có cùng productId và selectedColor
             setCart((prev) => {
                 if (!prev?.items) return prev;
                 return {
                     items: prev.items.map((item) =>
-                        item.productId._id === productId
+                        item.productId._id === productId && 
+                        (item.selectedColor || "") === (selectedColor || "")
                             ? { ...item, quantity: qty }
                             : item
                     ),
@@ -121,11 +124,12 @@ const Cart: React.FC = () => {
         }
     };
 
-    const removeItem = async (productId: string) => {
+    const removeItem = async (productId: string, selectedColor: string | undefined) => {
         try {
-            setUpdatingId(productId);
+            const uniqueKey = `${productId}_${selectedColor || ""}`;
+            setUpdatingId(uniqueKey);
             if (!user?.id) {
-                removeStoredCartItem(productId);
+                removeStoredCartItem(productId, selectedColor || "");
                 setCart(buildLocalCart());
                 toast.success("Đã xoá sản phẩm khỏi giỏ hàng.");
                 return;
@@ -134,12 +138,17 @@ const Cart: React.FC = () => {
             await axios.post("http://localhost:5000/api/cart/remove", {
                 userId: user.id,
                 productId,
+                selectedColor: selectedColor || "",
             });
-            // Cập nhật local state thay vì fetch lại
+            // Cập nhật local state thay vì fetch lại - xóa đúng item có cùng productId và selectedColor
             setCart((prev) => {
                 if (!prev?.items) return prev;
                 return {
-                    items: prev.items.filter((item) => item.productId._id !== productId),
+                    items: prev.items.filter(
+                        (item) => 
+                            !(item.productId._id === productId && 
+                              (item.selectedColor || "") === (selectedColor || ""))
+                    ),
                 };
             });
             toast.success("Đã xoá sản phẩm khỏi giỏ hàng.");
@@ -218,15 +227,17 @@ const Cart: React.FC = () => {
                 </div>
 
                 {!isEmpty &&
-                    cart?.items?.map((item: CartItem) => {
+                    cart?.items?.map((item: CartItem, index: number) => {
                         const product = item.productId;
                         const price = toNumber(product.price);
                         const oldPrice = toNumber(product.oldPrice);
                         const hasSale = oldPrice > price && oldPrice > 0;
                         const itemTotal = price * item.quantity;
                         const itemOldTotal = hasSale ? oldPrice * item.quantity : itemTotal;
+                        // Tạo unique key bằng productId + selectedColor + index để tránh duplicate
+                        const uniqueKey = `${product._id}_${item.selectedColor || ""}_${index}`;
                         return (
-                            <div key={product._id} className="cart-table-row">
+                            <div key={uniqueKey} className="cart-table-row">
                                 <div className="cart-product">
                                     <img src={product.image} alt={product.name} />
                                     <div>
@@ -238,7 +249,7 @@ const Cart: React.FC = () => {
                                         )}
                                         <div
                                             className="cart-product-remove"
-                                            onClick={() => removeItem(product._id)}
+                                            onClick={() => removeItem(product._id, item.selectedColor)}
                                         >
                                             <i className="fa fa-trash"></i> Xóa sản phẩm
                                         </div>
@@ -265,8 +276,8 @@ const Cart: React.FC = () => {
                                 <div className="cart-qty">
                                     <button
                                         className="qty-btn"
-                                        onClick={() => updateQty(product._id, item.quantity - 1)}
-                                        disabled={updatingId === product._id}
+                                        onClick={() => updateQty(product._id, item.selectedColor, item.quantity - 1)}
+                                        disabled={updatingId === `${product._id}_${item.selectedColor || ""}`}
                                     >
                                         -
                                     </button>
@@ -279,8 +290,8 @@ const Cart: React.FC = () => {
 
                                     <button
                                         className="qty-btn"
-                                        onClick={() => updateQty(product._id, item.quantity + 1)}
-                                        disabled={updatingId === product._id}
+                                        onClick={() => updateQty(product._id, item.selectedColor, item.quantity + 1)}
+                                        disabled={updatingId === `${product._id}_${item.selectedColor || ""}`}
                                     >
                                         +
                                     </button>

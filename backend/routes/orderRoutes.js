@@ -9,6 +9,11 @@ const {
   confirmOrderReceived,
 } = require("../controllers/orderController");
 const {
+  createMomoPayment,
+  momoCallback,
+  momoIPN,
+} = require("../controllers/momoController");
+const {
   authenticateToken,
   requireAdmin,
 } = require("../controllers/authController");
@@ -30,5 +35,10 @@ router.patch(
   requireAdmin,
   updateOrderStatus
 );
+
+// MOMO Payment routes
+router.post("/momo/create", createMomoPayment);
+router.get("/momo/callback", momoCallback);
+router.post("/momo/ipn", momoIPN);
 
 module.exports = router;

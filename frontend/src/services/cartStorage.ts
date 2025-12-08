@@ -47,9 +47,12 @@ export const upsertStoredCartItem = (payload: StoredCartItem): StoredCartItem[] 
   return items;
 };
 
-export const updateStoredCartQuantity = (productId: string, quantity: number): StoredCartItem[] => {
+export const updateStoredCartQuantity = (productId: string, selectedColor: string, quantity: number): StoredCartItem[] => {
   const items = readStorage();
-  const index = items.findIndex((item) => item.productId === productId);
+  // Tìm item bằng cả productId và selectedColor để phân biệt các biến thể màu
+  const index = items.findIndex(
+    (item) => item.productId === productId && (item.selectedColor || "") === selectedColor
+  );
   if (index === -1) return items;
   if (quantity <= 0) {
     items.splice(index, 1);
@@ -60,8 +63,11 @@ export const updateStoredCartQuantity = (productId: string, quantity: number): S
   return items;
 };
 
-export const removeStoredCartItem = (productId: string): StoredCartItem[] => {
-  const filtered = readStorage().filter((item) => item.productId !== productId);
+export const removeStoredCartItem = (productId: string, selectedColor: string): StoredCartItem[] => {
+  // Xóa item bằng cả productId và selectedColor để phân biệt các biến thể màu
+  const filtered = readStorage().filter(
+    (item) => !(item.productId === productId && (item.selectedColor || "") === selectedColor)
+  );
   writeStorage(filtered);
   return filtered;
 };
