@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
@@ -5,6 +6,7 @@ const Coupon = require("../models/Coupon");
 const { incrementUsedCount } = require("./couponController");
 
 const STATUS_LABELS = {
+  awaiting_payment: "Chờ thanh toán",
   pending: "Chờ xác nhận",
   processing: "Đang xử lý",
   handover_to_carrier: "Đã bàn giao cho đơn vị vận chuyển",
@@ -13,6 +15,8 @@ const STATUS_LABELS = {
   received: "Khách đã nhận",
   cancelled: "Đã huỷ",
 };
+
+const ONLINE_PAYMENT_METHODS = ["momo", "zalopay", "payoo"];
 
 const toNumber = (value) => {
   if (!value && value !== 0) return 0;
@@ -179,6 +183,17 @@ const createOrder = async (req, res) => {
       grandTotal: Math.max(total + parsedShippingFee - parsedDiscount, 0), // Tổng cộng (thành tiền + ship - discount)
     };
 
+    // Chỉ tạo đơn cho COD (thanh toán online tạo trong callback)
+    if (ONLINE_PAYMENT_METHODS.includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: "Thanh toán online phải thực hiện qua cổng thanh toán.",
+      });
+    }
+
+    const initialStatus = "pending";
+    const statusNote = "Đơn hàng được tạo thành công";
+
     // Retry logic để xử lý duplicate key error
     let order;
     let attempts = 0;
@@ -194,10 +209,11 @@ const createOrder = async (req, res) => {
             ? paymentMethod
             : "cod",
           totals,
+          status: initialStatus,
           statusHistory: [
             {
-              status: "pending",
-              note: "Đơn hàng được tạo thành công",
+              status: initialStatus,
+              note: statusNote,
               updatedBy: userId,
             },
           ],
@@ -222,47 +238,49 @@ const createOrder = async (req, res) => {
       throw new Error("Không thể tạo đơn hàng sau nhiều lần thử");
     }
 
-    // Giảm stock của các sản phẩm sau khi tạo order thành công
-    for (const item of items) {
-      const product = await Product.findById(item.productId);
-      const colorName = item.selectedColor || "";
+    // Giảm stock cho đơn COD (thanh toán online giảm trong callback)
+    {
+      for (const item of items) {
+        const product = await Product.findById(item.productId);
+        const colorName = item.selectedColor || "";
 
-      // Giảm stock tổng
-      await Product.findByIdAndUpdate(
-        item.productId,
-        { $inc: { stock: -item.quantity } },
-        { new: true }
-      );
-
-      // Giảm stock theo màu nếu có colorStocks
-      if (product.colorStocks && product.colorStocks.length > 0) {
-        const colorStockIndex = product.colorStocks.findIndex(
-          (cs) => cs.name === colorName
+        // Giảm stock tổng
+        await Product.findByIdAndUpdate(
+          item.productId,
+          { $inc: { stock: -item.quantity } },
+          { new: true }
         );
-        if (colorStockIndex !== -1) {
-          const updateField = `colorStocks.${colorStockIndex}.stock`;
-          await Product.findByIdAndUpdate(
-            item.productId,
-            { $inc: { [updateField]: -item.quantity } },
-            { new: true }
+
+        // Giảm stock theo màu nếu có colorStocks
+        if (product.colorStocks && product.colorStocks.length > 0) {
+          const colorStockIndex = product.colorStocks.findIndex(
+            (cs) => cs.name === colorName
           );
+          if (colorStockIndex !== -1) {
+            const updateField = `colorStocks.${colorStockIndex}.stock`;
+            await Product.findByIdAndUpdate(
+              item.productId,
+              { $inc: { [updateField]: -item.quantity } },
+              { new: true }
+            );
+          }
         }
-      }
-      
-      // Kiểm tra và cập nhật inStock nếu stock = 0
-      const updatedProduct = await Product.findById(item.productId);
-      if (updatedProduct) {
-        // Kiểm tra stock tổng
-        if (updatedProduct.stock <= 0) {
-          await Product.findByIdAndUpdate(item.productId, { inStock: false });
-        }
-        // Kiểm tra stock theo màu
-        if (updatedProduct.colorStocks && updatedProduct.colorStocks.length > 0) {
-          const allColorsOutOfStock = updatedProduct.colorStocks.every(
-            (cs) => cs.stock <= 0
-          );
-          if (allColorsOutOfStock) {
+        
+        // Kiểm tra và cập nhật inStock nếu stock = 0
+        const updatedProduct = await Product.findById(item.productId);
+        if (updatedProduct) {
+          // Kiểm tra stock tổng
+          if (updatedProduct.stock <= 0) {
             await Product.findByIdAndUpdate(item.productId, { inStock: false });
+          }
+          // Kiểm tra stock theo màu
+          if (updatedProduct.colorStocks && updatedProduct.colorStocks.length > 0) {
+            const allColorsOutOfStock = updatedProduct.colorStocks.every(
+              (cs) => cs.stock <= 0
+            );
+            if (allColorsOutOfStock) {
+              await Product.findByIdAndUpdate(item.productId, { inStock: false });
+            }
           }
         }
       }
@@ -328,7 +346,12 @@ const getOrderDetail = async (req, res) => {
     const { orderId } = req.params;
     const authUser = req.user;
 
-    const order = await Order.findById(orderId);
+    const queries = [{ code: orderId }];
+    if (mongoose.Types.ObjectId.isValid(orderId)) {
+      queries.push({ _id: orderId });
+    }
+
+    const order = await Order.findOne({ $or: queries });
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -506,36 +529,38 @@ const cancelOrder = async (req, res) => {
     }
 
     // Hoàn lại stock khi hủy đơn
-    for (const item of order.items) {
-      const product = await Product.findById(item.productId);
-      const colorName = item.selectedColor || "";
+    {
+      for (const item of order.items) {
+        const product = await Product.findById(item.productId);
+        const colorName = item.selectedColor || "";
 
-      // Hoàn lại stock tổng
-      await Product.findByIdAndUpdate(
-        item.productId,
-        { $inc: { stock: item.quantity } },
-        { new: true }
-      );
-
-      // Hoàn lại stock theo màu nếu có colorStocks
-      if (product && product.colorStocks && product.colorStocks.length > 0) {
-        const colorStockIndex = product.colorStocks.findIndex(
-          (cs) => cs.name === colorName
+        // Hoàn lại stock tổng
+        await Product.findByIdAndUpdate(
+          item.productId,
+          { $inc: { stock: item.quantity } },
+          { new: true }
         );
-        if (colorStockIndex !== -1) {
-          const updateField = `colorStocks.${colorStockIndex}.stock`;
-          await Product.findByIdAndUpdate(
-            item.productId,
-            { $inc: { [updateField]: item.quantity } },
-            { new: true }
+
+        // Hoàn lại stock theo màu nếu có colorStocks
+        if (product && product.colorStocks && product.colorStocks.length > 0) {
+          const colorStockIndex = product.colorStocks.findIndex(
+            (cs) => cs.name === colorName
           );
+          if (colorStockIndex !== -1) {
+            const updateField = `colorStocks.${colorStockIndex}.stock`;
+            await Product.findByIdAndUpdate(
+              item.productId,
+              { $inc: { [updateField]: item.quantity } },
+              { new: true }
+            );
+          }
         }
-      }
-      
-      // Cập nhật inStock nếu stock > 0
-      const updatedProduct = await Product.findById(item.productId);
-      if (updatedProduct && updatedProduct.stock > 0) {
-        await Product.findByIdAndUpdate(item.productId, { inStock: true });
+        
+        // Cập nhật inStock nếu stock > 0
+        const updatedProduct = await Product.findById(item.productId);
+        if (updatedProduct && updatedProduct.stock > 0) {
+          await Product.findByIdAndUpdate(item.productId, { inStock: true });
+        }
       }
     }
 
@@ -618,6 +643,149 @@ const confirmOrderReceived = async (req, res) => {
   }
 };
 
+// ===== TẠO ĐƠN HÀNG TỪ CALLBACK MOMO =====
+const createOrderFromMomo = async (orderData, transId) => {
+  try {
+    const { userId, shippingInfo, paymentMethod, shippingFee, discount, couponCode, items: cartItems } = orderData;
+
+    if (!userId || !cartItems || cartItems.length === 0) {
+      console.error("createOrderFromMomo: Thiếu thông tin đơn hàng");
+      return null;
+    }
+
+    const shippingPayload = buildShippingPayload(shippingInfo);
+    
+    // Fetch thông tin product từ database vì frontend có thể không gửi đầy đủ
+    const items = [];
+    for (const cartItem of cartItems) {
+      const product = await Product.findById(cartItem.productId);
+      if (!product) {
+        console.error(`Product ${cartItem.productId} not found`);
+        return null;
+      }
+
+      items.push({
+        productId: cartItem.productId,
+        name: cartItem.name || product.name,
+        image: cartItem.image || product.image || "",
+        price: cartItem.price || product.price,
+        oldPrice: cartItem.oldPrice || product.oldPrice || cartItem.price || product.price,
+        quantity: cartItem.quantity,
+        selectedColor: cartItem.selectedColor || "",
+      });
+    }
+
+    // Tính toán totals
+    const subTotal = items.reduce(
+      (sum, item) => sum + (item.oldPrice || item.price) * item.quantity,
+      0
+    );
+    const total = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    const savings = subTotal - total;
+    const parsedShippingFee = typeof shippingFee === "number" ? shippingFee : parseFloat(shippingFee) || 0;
+    const parsedDiscount = typeof discount === "number" ? discount : parseFloat(discount) || 0;
+
+    const totals = {
+      subTotal: total,
+      total: total,
+      savings,
+      shippingFee: parsedShippingFee,
+      discount: parsedDiscount,
+      grandTotal: Math.max(total + parsedShippingFee - parsedDiscount, 0),
+    };
+
+    // Retry logic để xử lý duplicate key error
+    let order;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (attempts < maxAttempts) {
+      try {
+        order = await Order.create({
+          userId,
+          items,
+          shippingInfo: shippingPayload,
+          paymentMethod: "momo",
+          paymentStatus: "paid", // Đã thanh toán thành công qua MoMo
+          status: "pending", // Đơn hàng được xác nhận
+          totals,
+          statusHistory: [
+            {
+              status: "pending",
+              note: `Thanh toán MOMO thành công. Mã giao dịch: ${transId}. Đơn hàng được tạo.`,
+              updatedBy: "system",
+            },
+          ],
+        });
+        break;
+      } catch (createError) {
+        if (createError.code === 11000 || createError.codeName === 'DuplicateKey') {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            throw new Error("Không thể tạo mã đơn hàng duy nhất");
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+          continue;
+        }
+        throw createError;
+      }
+    }
+
+    if (!order) {
+      throw new Error("Không thể tạo đơn hàng");
+    }
+
+    // Giảm stock cho các sản phẩm
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      const colorName = item.selectedColor || "";
+
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { stock: -item.quantity } },
+        { new: true }
+      );
+
+      if (product && product.colorStocks && product.colorStocks.length > 0) {
+        const colorStockIndex = product.colorStocks.findIndex(
+          (cs) => cs.name === colorName
+        );
+        if (colorStockIndex !== -1) {
+          const updateField = `colorStocks.${colorStockIndex}.stock`;
+          await Product.findByIdAndUpdate(
+            item.productId,
+            { $inc: { [updateField]: -item.quantity } },
+            { new: true }
+          );
+        }
+      }
+
+      const updatedProduct = await Product.findById(item.productId);
+      if (updatedProduct) {
+        if (updatedProduct.stock <= 0) {
+          await Product.findByIdAndUpdate(item.productId, { inStock: false });
+        }
+        if (updatedProduct.colorStocks && updatedProduct.colorStocks.length > 0) {
+          const allColorsOutOfStock = updatedProduct.colorStocks.every(
+            (cs) => cs.stock <= 0
+          );
+          if (allColorsOutOfStock) {
+            await Product.findByIdAndUpdate(item.productId, { inStock: false });
+          }
+        }
+      }
+    }
+
+    return order;
+  } catch (error) {
+    console.error("createOrderFromMomo error:", error);
+    return null;
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
@@ -626,4 +794,5 @@ module.exports = {
   updateOrderStatus,
   cancelOrder,
   confirmOrderReceived,
+  createOrderFromMomo,
 };

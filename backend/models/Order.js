@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Counter = require("./Counter");
 
 const ORDER_STATUSES = [
+  "awaiting_payment", // Chờ thanh toán (MoMo/Online)
   "pending", // Chờ xác nhận
   "processing", // Đang xử lý
   "handover_to_carrier", // Đã bàn giao cho đơn vị vận chuyển

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import "../user/css/checkout.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import logo from "../img/logo.png";
@@ -39,6 +39,7 @@ const PAYMENT_OPTIONS = [
 const Checkout: React.FC = () => {
   const { user, isAuth, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
@@ -57,6 +58,16 @@ const Checkout: React.FC = () => {
     address: user?.address || "",
     note: "",
   });
+
+  // Xử lý error từ MoMo callback
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error) {
+      toast.error(decodeURIComponent(error));
+      // Xóa query params
+      window.history.replaceState({}, document.title, "/checkout");
+    }
+  }, [searchParams]);
 
   const toNumber = (
     value: number | string | { $numberDecimal?: string } | undefined
@@ -215,28 +226,27 @@ const Checkout: React.FC = () => {
           return;
         }
 
-        // Tạo đơn hàng trước
-        const orderResponse = await createOrder({
+        // Chuẩn bị dữ liệu đơn hàng (KHÔNG tạo order ngay)
+        const orderData = {
           userId: user.id,
           shippingInfo: form,
           paymentMethod: "momo",
           shippingFee,
-          couponCode: appliedCoupon?.code || undefined,
           discount: appliedCoupon?.discount || 0,
-        });
+          couponCode: appliedCoupon?.code || undefined,
+          items: cart.items.map((item: any) => ({
+            productId: item.productId._id,
+            name: item.name,
+            image: item.image,
+            price: item.price,
+            oldPrice: item.productId.oldPrice || item.price,
+            quantity: item.quantity,
+            selectedColor: item.selectedColor,
+          })),
+        };
 
-        // Kiểm tra order code
-        if (!orderResponse.data?.code) {
-          toast.error("Không thể tạo đơn hàng. Vui lòng thử lại.");
-          setPlacing(false);
-          return;
-        }
-
-        // Tạo payment URL từ MOMO
-        const momoResponse = await createMomoPayment(
-          grandTotal,
-          orderResponse.data.code
-        );
+        // Tạo payment URL từ MOMO (gửi orderData thay vì orderId)
+        const momoResponse = await createMomoPayment(grandTotal, orderData);
 
         if (momoResponse.success && momoResponse.payUrl) {
           // Redirect đến trang thanh toán MOMO

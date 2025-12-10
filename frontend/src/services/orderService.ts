@@ -177,11 +177,11 @@ export interface MomoPaymentResponse {
 
 export const createMomoPayment = async (
   total_momo: number,
-  orderId?: string
+  orderData: any
 ): Promise<MomoPaymentResponse> => {
   const response = await axios.post<MomoPaymentResponse>(
     `${API_URL}/momo/create`,
-    { total_momo, orderId }
+    { total_momo, orderData }
   );
   return response.data;
 };
