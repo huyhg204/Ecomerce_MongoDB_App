@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { getToken } from "../../services/authService";
 import { toast } from "sonner";
@@ -8,6 +8,10 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./css/admin-dashboard.css";
 
 interface DashboardStats {
+  products: {
+    total: number;
+    inRange: number;
+  };
   users: {
     total: number;
     inRange: number;
@@ -32,47 +36,126 @@ interface DashboardStats {
     orders: number;
     average: number;
   };
-  last7Days: Array<{
+  dailyStats: Array<{
     date: string;
     orders: number;
+    revenue: number;
+    byStatus: {
+      pending: number;
+      processing: number;
+      handover_to_carrier: number;
+      shipping: number;
+      delivered: number;
+      received: number;
+      cancelled: number;
+    };
+  }>;
+  bestSellingProducts: Array<{
+    productId: string;
+    name: string;
+    image: string;
+    price: number;
+    quantitySold: number;
     revenue: number;
   }>;
 }
 
 const STATUS_LABELS: { [key: string]: string } = {
-  pending: "Chờ xác nhận",
+  pending: "Chờ xử lý",
   processing: "Đang xử lý",
   handover_to_carrier: "Đã bàn giao",
   shipping: "Đang giao",
   delivered: "Đã giao",
-  received: "Đã nhận",
+  received: "Đã hoàn thành",
   cancelled: "Đã hủy",
+};
+
+const STATUS_COLORS: { [key: string]: string } = {
+  pending: "#ffc107",
+  processing: "#ffc107",
+  handover_to_carrier: "#17a2b8",
+  shipping: "#17a2b8",
+  delivered: "#28a745",
+  received: "#28a745",
+  cancelled: "#dc3545",
 };
 
 const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [timePeriod, setTimePeriod] = useState<string>("7days");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
+    return new Date();
+  });
+  const [selectedMonth, setSelectedMonth] = useState<Date | null>(() => {
+    return new Date();
+  });
+  const [selectedQuarter, setSelectedQuarter] = useState<{ year: number; quarter: number }>(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), quarter: Math.floor(now.getMonth() / 3) + 1 };
+  });
+  const [selectedYear, setSelectedYear] = useState<Date | null>(() => {
+    return new Date();
+  });
+  const [startDateRange, setStartDateRange] = useState<Date | null>(null);
+  const [endDateRange, setEndDateRange] = useState<Date | null>(null);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async (customStartDate?: Date | null, customEndDate?: Date | null) => {
+  const fetchStats = useCallback(async (showLoading: boolean = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const token = getToken();
       const params = new URLSearchParams();
       
-      const start = customStartDate !== undefined ? customStartDate : startDate;
-      const end = customEndDate !== undefined ? customEndDate : endDate;
-      
-      if (start) {
-        params.append("startDate", start.toISOString().split("T")[0]);
-      }
-      if (end) {
-        params.append("endDate", end.toISOString().split("T")[0]);
+      if (timePeriod) {
+        let start: Date | null = null;
+        let end: Date | null = null;
+
+        if (timePeriod === "day" && selectedDate) {
+          start = new Date(selectedDate);
+          start.setHours(0, 0, 0, 0);
+          end = new Date(selectedDate);
+          end.setHours(23, 59, 59, 999);
+        } else if (timePeriod === "7days") {
+          // 7 ngày gần nhất
+          end = new Date();
+          end.setHours(23, 59, 59, 999);
+          start = new Date(end);
+          start.setDate(start.getDate() - 6);
+          start.setHours(0, 0, 0, 0);
+        } else if (timePeriod === "month" && selectedMonth) {
+          const year = selectedMonth.getFullYear();
+          const month = selectedMonth.getMonth();
+          start = new Date(year, month, 1);
+          end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        } else if (timePeriod === "quarter" && selectedQuarter) {
+          const { year, quarter } = selectedQuarter;
+          const startMonth = (quarter - 1) * 3;
+          start = new Date(year, startMonth, 1);
+          end = new Date(year, startMonth + 3, 0, 23, 59, 59, 999);
+        } else if (timePeriod === "year" && selectedYear) {
+          const year = selectedYear.getFullYear();
+          start = new Date(year, 0, 1);
+          end = new Date(year, 11, 31, 23, 59, 59, 999);
+        } else if (timePeriod === "range" && startDateRange && endDateRange) {
+          start = new Date(startDateRange);
+          start.setHours(0, 0, 0, 0);
+          end = new Date(endDateRange);
+          end.setHours(23, 59, 59, 999);
+        }
+
+        if (start && end) {
+          // Format date thành YYYY-MM-DD để tránh timezone issue
+          const formatDate = (date: Date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            return `${year}-${month}-${day}`;
+          };
+          params.append("startDate", formatDate(start));
+          params.append("endDate", formatDate(end));
+        }
       }
 
       const res = await axios.get(
@@ -85,15 +168,25 @@ const AdminDashboard: React.FC = () => {
       );
 
       if (res.data.success) {
+        console.log("Dashboard stats:", res.data.data);
+        console.log("Daily stats:", res.data.data.dailyStats);
         setStats(res.data.data);
       }
     } catch (error) {
       console.error("Lỗi lấy thống kê:", error);
       toast.error("Không thể tải thống kê. Vui lòng thử lại.");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
-  };
+  }, [timePeriod, selectedDate, selectedMonth, selectedQuarter, selectedYear, startDateRange, endDateRange]);
+
+  useEffect(() => {
+    // Chỉ fetch lần đầu khi component mount với filter mặc định 7days
+    fetchStats(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -111,38 +204,33 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleApplyFilter = () => {
-    // Sử dụng giá trị hiện tại từ state
-    fetchStats(startDate, endDate);
+    fetchStats(false); // Không hiển thị loading khi filter
   };
 
   const handleResetFilter = () => {
-    setStartDate(null);
-    setEndDate(null);
-    // Fetch lại với filter rỗng sau khi reset state
-    const fetchWithoutFilter = async () => {
-      try {
-        setLoading(true);
-        const token = getToken();
-        const res = await axios.get(
-          `http://localhost:5000/api/dashboard/stats`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+    const now = new Date();
+    setTimePeriod("7days");
+    setSelectedDate(now);
+    setSelectedMonth(now);
+    setSelectedQuarter({ year: now.getFullYear(), quarter: Math.floor(now.getMonth() / 3) + 1 });
+    setSelectedYear(now);
+    setStartDateRange(null);
+    setEndDateRange(null);
+  };
 
-        if (res.data.success) {
-          setStats(res.data.data);
-        }
-      } catch (error) {
-        console.error("Lỗi lấy thống kê:", error);
-        toast.error("Không thể tải thống kê. Vui lòng thử lại.");
-      } finally {
-        setLoading(false);
+  const getQuarterOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const options = [];
+    for (let year = currentYear; year >= currentYear - 2; year--) {
+      for (let quarter = 1; quarter <= 4; quarter++) {
+        options.push({ year, quarter });
       }
-    };
-    fetchWithoutFilter();
+    }
+    return options;
+  };
+
+  const formatQuarterLabel = (year: number, quarter: number) => {
+    return `Q${quarter} ${year}`;
   };
 
   if (loading) {
@@ -164,167 +252,375 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="admin-dashboard">
       <div className="dashboard-header">
-        <h2>Tổng quan</h2>
+        <div>
+          <h2>Dashboard</h2>
+          <p className="dashboard-subtitle">Tổng quan về hoạt động của cửa hàng</p>
+        </div>
         <div className="date-filter">
           <div className="filter-group">
-            <label>Từ ngày:</label>
-            <DatePicker
-              selected={startDate}
-              onChange={(date: Date | null) => setStartDate(date)}
-              selectsStart
-              startDate={startDate}
-              endDate={endDate}
-              dateFormat="dd/MM/yyyy"
-              placeholderText="Chọn ngày bắt đầu"
-              className="date-picker-input"
-              isClearable
-            />
+            <label>Chu kỳ thời gian:</label>
+            <select
+              value={timePeriod}
+              onChange={(e) => setTimePeriod(e.target.value)}
+              className="filter-select"
+            >
+              <option value="day">Theo ngày</option>
+              <option value="7days">7 ngày gần nhất</option>
+              <option value="month">Theo tháng</option>
+              <option value="quarter">Theo quý</option>
+              <option value="year">Theo năm</option>
+              <option value="range">Khoảng thời gian</option>
+            </select>
           </div>
-          <div className="filter-group">
-            <label>Đến ngày:</label>
-            <DatePicker
-              selected={endDate}
-              onChange={(date: Date | null) => setEndDate(date)}
-              selectsEnd
-              startDate={startDate}
-              endDate={endDate}
-              minDate={startDate}
-              dateFormat="dd/MM/yyyy"
-              placeholderText="Chọn ngày kết thúc"
-              className="date-picker-input"
-              isClearable
-            />
-          </div>
+          {timePeriod === "day" && (
+            <div className="filter-group">
+              <label>Ngày:</label>
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date: Date | null) => setSelectedDate(date)}
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Chọn ngày"
+                className="filter-select date-picker-input"
+                isClearable
+              />
+            </div>
+          )}
+          {timePeriod === "month" && (
+            <div className="filter-group">
+              <label>Tháng:</label>
+              <DatePicker
+                selected={selectedMonth}
+                onChange={(date: Date | null) => setSelectedMonth(date)}
+                dateFormat="MM/yyyy"
+                showMonthYearPicker
+                placeholderText="Chọn tháng"
+                className="filter-select date-picker-input"
+                isClearable
+              />
+            </div>
+          )}
+          {timePeriod === "quarter" && (
+            <div className="filter-group">
+              <label>Quý:</label>
+              <select
+                value={`${selectedQuarter.year}-Q${selectedQuarter.quarter}`}
+                onChange={(e) => {
+                  const [year, quarter] = e.target.value.split("-Q");
+                  setSelectedQuarter({ year: parseInt(year), quarter: parseInt(quarter) });
+                }}
+                className="filter-select"
+              >
+                {getQuarterOptions().map((opt) => (
+                  <option key={`${opt.year}-Q${opt.quarter}`} value={`${opt.year}-Q${opt.quarter}`}>
+                    {formatQuarterLabel(opt.year, opt.quarter)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {timePeriod === "year" && (
+            <div className="filter-group">
+              <label>Năm:</label>
+              <DatePicker
+                selected={selectedYear}
+                onChange={(date: Date | null) => setSelectedYear(date)}
+                dateFormat="yyyy"
+                showYearPicker
+                placeholderText="Chọn năm"
+                className="filter-select date-picker-input"
+                isClearable
+              />
+            </div>
+          )}
+          {timePeriod === "range" && (
+            <>
+              <div className="filter-group">
+                <label>Từ ngày:</label>
+                <DatePicker
+                  selected={startDateRange}
+                  onChange={(date: Date | null) => setStartDateRange(date)}
+                  selectsStart
+                  startDate={startDateRange}
+                  endDate={endDateRange}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Chọn ngày bắt đầu"
+                  className="filter-select date-picker-input"
+                  isClearable
+                />
+              </div>
+              <div className="filter-group">
+                <label>Đến ngày:</label>
+                <DatePicker
+                  selected={endDateRange}
+                  onChange={(date: Date | null) => setEndDateRange(date)}
+                  selectsEnd
+                  startDate={startDateRange || undefined}
+                  endDate={endDateRange || undefined}
+                  minDate={startDateRange || undefined}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Chọn ngày kết thúc"
+                  className="filter-select date-picker-input"
+                  isClearable
+                />
+              </div>
+            </>
+          )}
           <button className="btn-apply" onClick={handleApplyFilter}>
+            <i className="fa-solid fa-calendar"></i>
             Áp dụng
           </button>
-          {(startDate || endDate) && (
-            <button className="btn-reset" onClick={handleResetFilter}>
-              Xóa bộ lọc
-            </button>
-          )}
+          <button className="btn-reset" onClick={handleResetFilter}>
+            Đặt lại
+          </button>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="stats-grid">
-        {/* Users Stats */}
+        {/* Products Stats */}
         <div className="stat-card">
-          <div className="stat-icon users">
-            <i className="fa-solid fa-users"></i>
+          <div className="stat-icon products">
+            <i className="fa-solid fa-box"></i>
           </div>
           <div className="stat-content">
-            <div className="stat-label">Tổng số khách hàng</div>
-            <div className="stat-value">{stats.users.total}</div>
-            <div className="stat-details">
-              {startDate || endDate ? (
-                <>
-                  Trong khoảng: <strong>{stats.users.inRange}</strong>
-                </>
-              ) : (
-                <>
-                  Hôm nay: <strong>{stats.users.today}</strong>
-                </>
-              )}
-            </div>
+            <div className="stat-label">Tổng sản phẩm</div>
+            <div className="stat-value">{stats.products.total}</div>
           </div>
         </div>
 
         {/* Orders Stats */}
         <div className="stat-card">
           <div className="stat-icon orders">
-            <i className="fa-solid fa-shopping-cart"></i>
+            <i className="fa-solid fa-shopping-bag"></i>
           </div>
           <div className="stat-content">
-            <div className="stat-label">Tổng số đơn hàng</div>
+            <div className="stat-label">Tổng đơn hàng</div>
             <div className="stat-value">{stats.orders.total}</div>
-            <div className="stat-details">
-              {startDate || endDate ? (
-                <>
-                  Trong khoảng: <strong>{stats.orders.inRange}</strong>
-                </>
-              ) : (
-                <>
-                  Hôm nay: <strong>{stats.orders.today}</strong>
-                </>
-              )}
-            </div>
+          </div>
+        </div>
+
+        {/* Users Stats */}
+        <div className="stat-card">
+          <div className="stat-icon users">
+            <i className="fa-solid fa-users"></i>
+          </div>
+          <div className="stat-content">
+            <div className="stat-label">Tổng người dùng</div>
+            <div className="stat-value">{stats.users.total}</div>
           </div>
         </div>
 
         {/* Revenue Stats */}
         <div className="stat-card">
           <div className="stat-icon revenue">
-            <i className="fa-solid fa-money-bill-wave"></i>
+            <i className="fa-solid fa-dollar-sign"></i>
           </div>
           <div className="stat-content">
             <div className="stat-label">Tổng doanh thu</div>
             <div className="stat-value">{formatCurrency(stats.revenue.total)}</div>
-            <div className="stat-details">
-              Đơn hàng: <strong>{stats.revenue.orders}</strong> | Trung bình:{" "}
-              <strong>{formatCurrency(stats.revenue.average)}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Order Statistics Section */}
+      <div className="dashboard-section">
+        <h3>Thống kê đơn hàng</h3>
+        
+        {/* Revenue by Day Line Chart */}
+        <div className="chart-wrapper">
+          <h4>Doanh thu theo ngày</h4>
+          <div className="line-chart-container">
+            <div className="line-chart">
+              <svg className="line-chart-svg" viewBox="0 0 1000 300" preserveAspectRatio="none">
+                {stats.dailyStats.length > 0 && (
+                  <>
+                    {stats.dailyStats.length > 1 && (
+                      <polyline
+                        className="line-chart-path"
+                        points={stats.dailyStats.map((day, index) => {
+                          const maxRevenue = Math.max(
+                            ...stats.dailyStats.map((d) => d.revenue),
+                            1
+                          );
+                          // Tính x để căn chỉnh với labels (labels được chia đều bằng flex)
+                          // Điểm đầu ở 0, điểm cuối ở 1000, các điểm giữa chia đều
+                          const x = stats.dailyStats.length === 1 
+                            ? 500 
+                            : (index / (stats.dailyStats.length - 1)) * 1000;
+                          const y = 300 - (day.revenue / maxRevenue) * 280;
+                          return `${x},${y}`;
+                        }).join(" ")}
+                        fill="none"
+                        stroke="#007bff"
+                        strokeWidth="2"
+                      />
+                    )}
+                    {stats.dailyStats.map((day, index) => {
+                      const maxRevenue = Math.max(
+                        ...stats.dailyStats.map((d) => d.revenue),
+                        1
+                      );
+                      // Tính x để căn chỉnh với labels
+                      const x = stats.dailyStats.length === 1 
+                        ? 500 
+                        : (index / (stats.dailyStats.length - 1)) * 1000;
+                      const y = 300 - (day.revenue / maxRevenue) * 280;
+                      return (
+                        <g key={index}>
+                          <title>{formatCurrency(day.revenue)}</title>
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="4"
+                            fill="#007bff"
+                            className="line-chart-dot"
+                          />
+                        </g>
+                      );
+                    })}
+                  </>
+                )}
+              </svg>
+              <div className="line-chart-labels">
+                {stats.dailyStats.map((day, index) => (
+                  <div key={index} className="line-chart-label" style={{ flex: stats.dailyStats.length === 1 ? '1' : '0 0 auto' }}>
+                    {formatDate(day.date)}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="chart-legend">
+              <span className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: "#007bff" }}></span>
+                Doanh thu
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Average Order Value */}
-        <div className="stat-card">
-          <div className="stat-icon average">
-            <i className="fa-solid fa-chart-line"></i>
-          </div>
-          <div className="stat-content">
-            <div className="stat-label">Giá trị đơn trung bình</div>
-            <div className="stat-value">{formatCurrency(stats.revenue.average)}</div>
-            <div className="stat-details">
-              Từ <strong>{stats.revenue.orders}</strong> đơn hàng
+        {/* Orders by Status Bar Chart */}
+        <div className="chart-wrapper">
+          <h4>Số đơn hàng theo trạng thái</h4>
+          <div className="bar-chart-container">
+            <div className="bar-chart">
+              {stats.dailyStats.length > 0 ? (
+                stats.dailyStats.map((day, index) => {
+                  const maxOrders = Math.max(
+                    ...stats.dailyStats.map((d) => d.orders),
+                    1
+                  );
+                  const barHeight = (day.orders / maxOrders) * 100;
+                  
+                  const statusOrder = ["received", "delivered", "processing", "pending"] as const;
+                  const statusCounts = statusOrder.map(status => ({
+                    status,
+                    count: (day.byStatus[status as keyof typeof day.byStatus] || 0) as number,
+                  })).filter(item => item.count > 0);
+
+                  return (
+                    <div key={index} className="bar-chart-item">
+                      <div className="bar-chart-bars">
+                        {statusCounts.length > 0 ? (
+                          statusCounts.map((item, idx) => {
+                            const segmentHeight = day.orders > 0 ? (item.count / day.orders) * barHeight : 0;
+                            return (
+                              <div
+                                key={idx}
+                                className="bar-chart-segment"
+                                style={{
+                                  height: `${segmentHeight}%`,
+                                  backgroundColor: STATUS_COLORS[item.status] || "#6c757d",
+                                }}
+                                title={`${STATUS_LABELS[item.status]}: ${item.count}`}
+                              ></div>
+                            );
+                          })
+                        ) : (
+                          <div
+                            className="bar-chart-segment"
+                            style={{
+                              height: "0%",
+                              backgroundColor: "#e9ecef",
+                            }}
+                            title="Không có đơn hàng"
+                          ></div>
+                        )}
+                      </div>
+                      <div className="bar-chart-label">{formatDate(day.date)}</div>
+                      <div className="bar-chart-value">{day.orders}</div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="no-chart-data">Không có dữ liệu</div>
+              )}
+            </div>
+            <div className="chart-legend">
+              <span className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: "#28a745" }}></span>
+                Đã hoàn thành
+              </span>
+              <span className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: "#ffc107" }}></span>
+                Đang xử lý
+              </span>
+              <span className="legend-item">
+                <span className="legend-color" style={{ backgroundColor: "#dc3545" }}></span>
+                Chờ xử lý
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Orders by Status */}
+      {/* Best Selling Products */}
       <div className="dashboard-section">
-        <h3>Đơn hàng theo trạng thái</h3>
-        <div className="status-grid">
-          {Object.entries(stats.orders.byStatus).map(([status, count]) => (
-            <div key={status} className="status-card">
-              <div className="status-label">{STATUS_LABELS[status]}</div>
-              <div className="status-value">{count}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Last 7 Days Chart */}
-      <div className="dashboard-section">
-        <h3>Thống kê 7 ngày gần nhất</h3>
-        <div className="chart-container">
-          <div className="chart-bars">
-            {stats.last7Days.map((day, index) => {
-              const maxRevenue = Math.max(
-                ...stats.last7Days.map((d) => d.revenue)
-              );
-              const barHeight = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
-              
-              return (
-                <div key={index} className="chart-bar-item">
-                  <div className="bar-wrapper">
-                    <div
-                      className="bar"
-                      style={{ height: `${barHeight}%` }}
-                      title={formatCurrency(day.revenue)}
-                    ></div>
-                  </div>
-                  <div className="bar-label">{formatDate(day.date)}</div>
-                  <div className="bar-value">
-                    {day.orders} đơn
-                    <br />
-                    {formatCurrency(day.revenue)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <h3>Top 10 sản phẩm bán chạy</h3>
+        <div className="products-table-container">
+          <table className="products-table">
+            <thead>
+              <tr>
+                <th>Hình ảnh</th>
+                <th>Tên sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng bán</th>
+                <th>Doanh thu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.bestSellingProducts.length > 0 ? (
+                stats.bestSellingProducts.map((product) => (
+                  <tr key={product.productId}>
+                    <td>
+                      <img
+                        src={
+                          product.image?.startsWith("http")
+                            ? product.image
+                            : `http://localhost:5000/${product.image}`
+                        }
+                        alt={product.name}
+                        className="product-image"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "http://localhost:5000/uploads/default-product.png";
+                        }}
+                      />
+                    </td>
+                    <td>{product.name}</td>
+                    <td>{formatCurrency(product.price)}</td>
+                    <td>{product.quantitySold}</td>
+                    <td>{formatCurrency(product.revenue)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="no-data">
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
